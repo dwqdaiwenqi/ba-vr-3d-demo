@@ -125,7 +125,64 @@ const Playground = () => {
     const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 1000)
     camera.position.set(0, 0, 50)
     camera.lookAt(camera.position.clone().add(new THREE.Vector3(0, 0, -1)))
-    camera.rotation.x = 0
+
+    // ── 设计稿 UI 辅助函数 ────────────────────────────────
+    const loader = new THREE.TextureLoader()
+
+    function designPxToWorld(dsX: number, dsY: number, z: number, designW: number) {
+      const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 1000)
+      camera.position.set(0, 0, 50)
+      camera.lookAt(camera.position.clone().add(new THREE.Vector3(0, 0, -1)))
+
+      const designScale = innerWidth / designW
+      const ndcX = ((dsX * designScale) / innerWidth) * 2 - 1
+      const ndcY = -((dsY * designScale) / innerHeight) * 2 + 1
+      const ndcPoint = new THREE.Vector3(ndcX, ndcY, 0.5)
+      ndcPoint.unproject(camera)
+      const rayDir = ndcPoint.sub(camera.position).normalize()
+      const t = (z - camera.position.z) / rayDir.z
+      return { worldX: camera.position.x + t * rayDir.x, worldY: camera.position.y + t * rayDir.y }
+    }
+
+    function addUISprite({
+      file,
+      designW,
+      itemW,
+      left,
+      top,
+      z
+    }: {
+      file: string
+      designW: number
+      itemW: number
+      left: number
+      top: number
+      z: number
+    }) {
+      return new Promise<THREE.Mesh>((resolve) => {
+        loader.load(file, (tex) => {
+          const aspect = tex.image.width / tex.image.height
+          const { worldX: x0, worldY: y0 } = designPxToWorld(left, top, z, designW)
+          const { worldX: x1 } = designPxToWorld(left + itemW, top, z, designW)
+          const w = x1 - x0
+          const h = w / aspect
+          const mesh = new THREE.Mesh(
+            new THREE.PlaneGeometry(w, h),
+            new THREE.MeshBasicMaterial({
+              map: tex,
+              transparent: true,
+              depthWrite: false,
+              depthTest: true,
+              side: THREE.DoubleSide
+            })
+          )
+          mesh.renderOrder = 999
+          mesh.position.set(x0 + w / 2, y0 - h / 2, z)
+          scene.add(mesh)
+          resolve(mesh)
+        })
+      })
+    }
 
     const SEG_X = 100
     const SEG_Y = 100
@@ -240,6 +297,70 @@ const Playground = () => {
 
     const noise3D = createNoise3D()
 
+    Promise.all([
+      addUISprite({
+        file: bannerUrl,
+        designW: 1920,
+        itemW: 1000,
+        left: 400,
+        top: 300,
+        z: 0
+      }),
+      addUISprite({
+        file: navLeftUrl,
+        designW: 1920,
+        itemW: 150,
+        left: 100,
+        top: 500,
+        z: 10
+      }),
+      addUISprite({
+        file: navRightUrl,
+        designW: 1920,
+        itemW: 150,
+        left: 1500,
+        top: 300,
+        z: -40
+      })
+    ])
+      .then(([b, i1, i2]) => {
+        banner = b
+        icon1 = i1
+        icon2 = i2
+
+        banner.material.opacity = 1
+        icon1.material.opacity = 1
+        icon2.material.opacity = 1
+
+        // new TWEEN.Tween({ t: 0 }, uiTw)
+        //   .to({ t: 1 }, 500)
+        //   .easing(TWEEN.Easing.Quadratic.InOut)
+        //   .delay(1500)
+        //   .onUpdate((obj: { t: number }) => {
+        //     if (banner) (banner.material as THREE.MeshBasicMaterial).opacity = obj.t
+        //   })
+        //   .start()
+        // new TWEEN.Tween({ t: 0 }, uiTw)
+        //   .to({ t: 1 }, 500)
+        //   .easing(TWEEN.Easing.Quadratic.InOut)
+        //   .delay(2000)
+        //   .onUpdate((obj: { t: number }) => {
+        //     if (icon1) (icon1.material as THREE.MeshBasicMaterial).opacity = obj.t
+        //   })
+        //   .start()
+        // new TWEEN.Tween({ t: 0 }, uiTw)
+        //   .to({ t: 1 }, 400)
+        //   .easing(TWEEN.Easing.Quadratic.InOut)
+        //   .delay(2500)
+        //   .onUpdate((obj: { t: number }) => {
+        //     if (icon2) (icon2.material as THREE.MeshBasicMaterial).opacity = obj.t
+        //   })
+        //   .start()
+      })
+      .catch(() => {
+        // 图片不存在时忽略，直接启动
+      })
+
     // ── dat.GUI ───────────────────────────────────────────
     const gui = new GUI()
     const params = {
@@ -251,18 +372,36 @@ const Playground = () => {
       maskRX: 0.5,
       maskRY: 0.5,
       maskN: 5.5,
-      maskSoft: 0,
+      maskSoft: 0.6,
       maskColor: '#ffffff',
       camX: 0,
       camY: 0,
       camZ: 50,
-      axisAngle: 0.0
+      axisAngle: 1.2
+    }
+
+    const skyDomeParams = {
+      topColor: '#EBF7FF',
+      bottomColor: '#F2F1FF',
+      cloudColor: '#ffffff',
+      gradientPow: 1.8,
+      edge0: 0.25,
+      edge1: 0.6,
+      showCloud: true,
+      cloudCoverage: 0.45,
+      cloudDensity: 0.7,
+      cloudScale: 2.5,
+      cloudSpeed: 0.1
     }
 
     plane.position.y = params.planeY + 0.1
     plane.position.z = params.planeZ
     fillMesh.position.y = params.planeY
     fillMesh.position.z = params.planeZ
+
+    barrelPass.uniforms.maskSoft.value = params.maskSoft
+
+    camera.rotation.x = params.axisAngle
 
     const maskFolder = gui.addFolder('VR Mask')
     maskFolder
@@ -342,19 +481,7 @@ const Playground = () => {
     camFolder.open()
 
     const skyDomeUni = (skyDome.material as THREE.ShaderMaterial).uniforms
-    const skyDomeParams = {
-      topColor: '#EBF7FF',
-      bottomColor: '#F2F1FF',
-      cloudColor: '#ffffff',
-      gradientPow: 1.8,
-      edge0: 0.25,
-      edge1: 0.6,
-      showCloud: true,
-      cloudCoverage: 0.45,
-      cloudDensity: 0.7,
-      cloudScale: 2.5,
-      cloudSpeed: 0.1
-    }
+
     skyDomeUni.uGradientPow.value = skyDomeParams.gradientPow
     skyDomeUni.uCloudSpeed.value = skyDomeParams.cloudSpeed
     skyDomeUni.uEdge0.value = skyDomeParams.edge0
@@ -429,75 +556,35 @@ const Playground = () => {
     skyDomeFolder.open()
 
     // ── 入场动画 ──────────────────────────────────────────
-    new TWEEN.Tween({ rx: 0 }, uiTw)
-      .to({ rx: 0 }, 2000)
-      .easing(TWEEN.Easing.Quadratic.InOut)
+    new TWEEN.Tween({ rx: params.axisAngle }, uiTw)
+      .to({ rx: 0 }, 1300)
+      .easing(TWEEN.Easing.Quadratic.Out)
       .onUpdate((obj: { rx: number }) => {
         camera.rotation.x = obj.rx
       })
       .start()
 
     new TWEEN.Tween({ maskSoft: params.maskSoft }, uiTw)
-      .to({ maskSoft: 0 }, 1500)
+      .to({ maskSoft: 0 }, 800)
+      .delay(1300)
       .easing(TWEEN.Easing.Quadratic.InOut)
       .onUpdate((obj: { maskSoft: number }) => {
         barrelPass.uniforms.maskSoft.value = obj.maskSoft
       })
+      .onComplete(() => {})
       .start()
 
-    // ── 设计稿 UI 辅助函数 ────────────────────────────────
-    const loader = new THREE.TextureLoader()
+    addEventListener('mousemove', (e) => {
+      const [x, y] = [e.pageX, e.pageY]
 
-    function designPxToWorld(dsX: number, dsY: number, z: number, designW: number) {
-      const designScale = innerWidth / designW
-      const ndcX = ((dsX * designScale) / innerWidth) * 2 - 1
-      const ndcY = -((dsY * designScale) / innerHeight) * 2 + 1
-      const ndcPoint = new THREE.Vector3(ndcX, ndcY, 0.5)
-      ndcPoint.unproject(camera)
-      const rayDir = ndcPoint.sub(camera.position).normalize()
-      const t = (z - camera.position.z) / rayDir.z
-      return { worldX: camera.position.x + t * rayDir.x, worldY: camera.position.y + t * rayDir.y }
-    }
+      const sx = x / innerWidth - 0.5
+      const sy = y / innerHeight - 0.5
 
-    function addUISprite({
-      file,
-      designW,
-      itemW,
-      left,
-      top,
-      z
-    }: {
-      file: string
-      designW: number
-      itemW: number
-      left: number
-      top: number
-      z: number
-    }) {
-      return new Promise<THREE.Mesh>((resolve) => {
-        loader.load(file, (tex) => {
-          const aspect = tex.image.width / tex.image.height
-          const { worldX: x0, worldY: y0 } = designPxToWorld(left, top, z, designW)
-          const { worldX: x1 } = designPxToWorld(left + itemW, top, z, designW)
-          const w = x1 - x0
-          const h = w / aspect
-          const mesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(w, h),
-            new THREE.MeshBasicMaterial({
-              map: tex,
-              transparent: true,
-              depthWrite: false,
-              depthTest: true,
-              side: THREE.DoubleSide
-            })
-          )
-          mesh.renderOrder = 999
-          mesh.position.set(x0 + w / 2, y0 - h / 2, z)
-          scene.add(mesh)
-          resolve(mesh)
-        })
-      })
-    }
+      camera.position.x = sx * 50
+      camera.position.y = sy * 30
+
+      // console.log('sx', sx)
+    })
 
     // ── 动画循环 ──────────────────────────────────────────
     let rafId: number
@@ -560,71 +647,6 @@ const Playground = () => {
 
       composer.render()
     }
-
-    // 加载 UI 图片后启动
-    Promise.all([
-      addUISprite({
-        file: bannerUrl,
-        designW: 1920,
-        itemW: 1000,
-        left: 400,
-        top: 300,
-        z: 0
-      }),
-      addUISprite({
-        file: navLeftUrl,
-        designW: 1920,
-        itemW: 150,
-        left: 100,
-        top: 500,
-        z: 10
-      }),
-      addUISprite({
-        file: navRightUrl,
-        designW: 1920,
-        itemW: 150,
-        left: 1500,
-        top: 300,
-        z: -40
-      })
-    ])
-      .then(([b, i1, i2]) => {
-        banner = b
-        icon1 = i1
-        icon2 = i2
-
-        banner.material.opacity = 0
-        icon1.material.opacity = 0
-        icon2.material.opacity = 0
-
-        new TWEEN.Tween({ t: 0 }, uiTw)
-          .to({ t: 1 }, 500)
-          .easing(TWEEN.Easing.Quadratic.InOut)
-          .delay(1500)
-          .onUpdate((obj: { t: number }) => {
-            if (banner) (banner.material as THREE.MeshBasicMaterial).opacity = obj.t
-          })
-          .start()
-        new TWEEN.Tween({ t: 0 }, uiTw)
-          .to({ t: 1 }, 500)
-          .easing(TWEEN.Easing.Quadratic.InOut)
-          .delay(2000)
-          .onUpdate((obj: { t: number }) => {
-            if (icon1) (icon1.material as THREE.MeshBasicMaterial).opacity = obj.t
-          })
-          .start()
-        new TWEEN.Tween({ t: 0 }, uiTw)
-          .to({ t: 1 }, 400)
-          .easing(TWEEN.Easing.Quadratic.InOut)
-          .delay(2500)
-          .onUpdate((obj: { t: number }) => {
-            if (icon2) (icon2.material as THREE.MeshBasicMaterial).opacity = obj.t
-          })
-          .start()
-      })
-      .catch(() => {
-        // 图片不存在时忽略，直接启动
-      })
 
     animate()
 
