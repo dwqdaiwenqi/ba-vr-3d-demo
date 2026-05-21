@@ -1,0 +1,8 @@
+node_modules
+dist
+build
+libraries/**/lib
+pixi-assets/build
+src/third-party/**
+*.min.js
+public/

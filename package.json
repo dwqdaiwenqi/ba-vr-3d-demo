@@ -1,0 +1,69 @@
+{
+  "name": "game_region_projname",
+  "private": true,
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "cross-env vite --host",
+    "build": "cross-env vite build --mode dev",
+    "build:test": "cross-env vite build --mode test",
+    "build:main": "cross-env vite build --mode main",
+    "build:font": "node cmd/pyftsubset-batch.js  --outDir=./src/assets/font",
+    "eslint": "eslint --ext .js,.vue --ignore-path .gitignore --fix src",
+    "prettier": "prettier --write",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@types/howler": "^2.2.12",
+    "@types/lodash-es": "^4.17.12",
+    "@types/three": "^0.184.1",
+    "dat.gui": "0.7.9",
+    "dayjs": "^1.11.9",
+    "lodash-es": "^4.17.22",
+    "motion": "^12.23.24",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.15.1",
+    "simplex-noise": "^4.0.3",
+    "three": "0.160.0",
+    "zustand": "^5.0.8"
+  },
+  "devDependencies": {
+    "@rushstack/eslint-patch": "^1.3.3",
+    "@tweenjs/tween.js": "^23.1.3",
+    "@types/lodash": "^4.17.17",
+    "@types/node": "^20.11.28",
+    "@types/postcss-pxtorem": "^6.0.3",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@typescript-eslint/eslint-plugin": "^8.53.1",
+    "@typescript-eslint/parser": "^8.53.1",
+    "@vitejs/plugin-legacy": "^7.2.1",
+    "@vitejs/plugin-react-swc": "^3.5.0",
+    "autoprefixer": "^10.4.19",
+    "axios": "^1.9.0",
+    "cross-env": "^7.0.3",
+    "eslint": "^8.49.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-react": "^7.37.5",
+    "path": "^0.12.7",
+    "postcss": "^8.4.24",
+    "postcss-pxtorem": "^6.1.0",
+    "prettier": "^3.0.3",
+    "sass": "^1.79.5",
+    "typescript": "~5.4.0",
+    "vite": "^4.5.2",
+    "vite-plugin-html": "^3.2.0"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "src/**/*.{js,jsx,vue,ts,tsx}": [
+      "npm run lint",
+      "git add"
+    ]
+  }
+}

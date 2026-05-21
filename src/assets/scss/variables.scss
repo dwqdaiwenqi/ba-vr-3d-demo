@@ -1,0 +1,175 @@
+@use 'sass:math';
+/* --- 该媒体查询分隔点 ------ */
+$MpageMaxWidth: 900; // 移动端页面最大宽度（pc和移动端页面分界点）
+
+$MaxWidth: 1000; // 移动端页面最大宽度（pc和移动端页面分界点）
+
+@mixin userSelect {
+  // 避免选中出现蓝色
+  -moz-user-select: none; /*火狐*/
+  -webkit-user-select: none; /*webkit浏览器*/
+  -ms-user-select: none; /*IE10*/
+  -khtml-user-select: none; /*早期浏览器*/
+  user-select: none;
+}
+
+@mixin nowrapEllipsis {
+  // 单行缩略号
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@mixin hideScrollBar {
+  // 隐藏滚动条且可以滚动
+  &::-webkit-scrollbar {
+    width: 0 !important;
+  } //chrome 和Safari
+  -ms-overflow-style: none; // IE 10+
+  overflow: -moz-scrollbars-none; //Firefox
+}
+
+@mixin center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+@mixin marginCenter {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: auto;
+}
+
+@mixin gridCenter {
+  display: grid;
+  place-items: center;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+@mixin flexCenter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin transition {
+  transition: all 0.3s ease;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+@mixin hover {
+  will-change: transform;
+}
+
+@mixin scrolltype {
+  &::-webkit-scrollbar {
+    /*滚动条整体样式*/
+    width: 6px; /*高宽分别对应横竖滚动条的尺寸*/
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    /*滚动条里面小方块*/
+    border-radius: 3px;
+    box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.2);
+    -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.2);
+    background: #e36a49;
+  }
+
+  &::-webkit-scrollbar-track {
+    /*滚动条里面轨道*/
+    box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.2);
+    -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+    background: rgba(34, 24, 21, 0.1);
+  }
+}
+
+@mixin fonts($font-size) {
+  --capital-height: #{$font-size}; // 使用Sass变量来设置CSS变量
+  --fm-emSquare: 1;
+  --fm-capitalHeight: 0.693;
+  --fm-descender: 0.525;
+  --fm-ascender: 1.115;
+  --fm-linegap: 0;
+  --lineheightNormal: (var(--fm-ascender) + var(--fm-descender) + var(--fm-linegap));
+  --distanceBottom: (var(--fm-descender));
+  --distanceTop: (var(--fm-ascender) - var(--fm-capitalHeight));
+  --contentArea: (var(--lineheightNormal) * var(--computedFontSize));
+  --valign: ((var(--distanceBottom) - var(--distanceTop)) * var(--computedFontSize));
+  --computedFontSize: (var(--capital-height) / var(--fm-capitalHeight));
+  --computedLineheight: ((var(--line-height) * var(--capital-height)) - var(--valign));
+  --line-height: 2;
+
+  font-size: calc(var(--computedFontSize) * 1px);
+  line-height: calc(var(--computedLineheight) * 1px);
+}
+
+// 过渡动画
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+////////////////////////////
+///
+///
+* {
+  user-select: none;
+  -webkit-user-select: none;
+}
+body {
+  -webkit-tap-highlight-color: transparent;
+}
+$max-content-width: 1300px;
+@mixin wh-full {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+@function p2m($px) {
+  $factor: math.div(1920, 16); // 120
+  @return $factor * math.div($px, 1920) * 1rem;
+}
+
+@mixin responsive-bg($url, $ext: 'png') {
+  html[data-webp='true'] & {
+    background-image: url(#{$url}.webp);
+    background-repeat: no-repeat;
+    background-position: 0 0;
+    background-size: 100% auto;
+  }
+  html[data-webp='false'] & {
+    background-image: url(#{$url}.#{$ext});
+    background-repeat: no-repeat;
+    background-position: 0 0;
+    background-size: 100% auto;
+  }
+}
+
+@mixin hover-lighter {
+  @media (any-hover: hover) {
+    &:hover {
+      filter: drop-shadow(0 0 10px white) brightness(1.1);
+    }
+  }
+}
+
