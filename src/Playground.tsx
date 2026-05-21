@@ -122,8 +122,11 @@ const Playground = () => {
     )
     scene.add(skyDome)
 
+    let camFinX = 0
+    let camFinY = 0
+
     const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 1000)
-    camera.position.set(0, 0, 50)
+    camera.position.set(camFinX, camFinY, 50)
     camera.lookAt(camera.position.clone().add(new THREE.Vector3(0, 0, -1)))
 
     // ── 设计稿 UI 辅助函数 ────────────────────────────────
@@ -377,7 +380,8 @@ const Playground = () => {
       camX: 0,
       camY: 0,
       camZ: 50,
-      axisAngle: 1.2
+      axisAngle: 1.2,
+      lockCamera: false
     }
 
     const skyDomeParams = {
@@ -423,7 +427,7 @@ const Playground = () => {
         barrelPass.uniforms.maskN.value = v
       })
     maskFolder
-      .add(params, 'maskSoft', 0, 1, 0.01)
+      .add(params, 'maskSoft', 0, 4, 0.01)
       .name('羽化')
       .onChange((v: number) => {
         barrelPass.uniforms.maskSoft.value = v
@@ -458,13 +462,17 @@ const Playground = () => {
       .add(params, 'camX', -100, 100, 0.5)
       .name('X')
       .onChange((v: number) => {
-        camera.position.x = v
+        if (!params.lockCamera) {
+          camFinX = v
+        }
       })
     camFolder
       .add(params, 'camY', -100, 100, 0.5)
       .name('Y')
       .onChange((v: number) => {
-        camera.position.y = v
+        if (!params.lockCamera) {
+          camFinY = v
+        }
       })
     camFolder
       .add(params, 'camZ', 10, 500, 0.5)
@@ -477,6 +485,15 @@ const Playground = () => {
       .name('angle')
       .onChange((v: number) => {
         camera.rotation.x = v
+      })
+    camFolder
+      .add(params, 'lockCamera')
+      .name('归位并固定')
+      .onChange((v: boolean) => {
+        if (v) {
+          camFinX = 0
+          camFinY = 0
+        }
       })
     camFolder.open()
 
@@ -577,11 +594,13 @@ const Playground = () => {
     addEventListener('mousemove', (e) => {
       const [x, y] = [e.pageX, e.pageY]
 
+      if (params.lockCamera) return
+
       const sx = x / innerWidth - 0.5
       const sy = y / innerHeight - 0.5
 
-      camera.position.x = sx * 50
-      camera.position.y = sy * 30
+      camFinX = sx * 20
+      camFinY = sy * -10
 
       // console.log('sx', sx)
     })
@@ -596,6 +615,9 @@ const Playground = () => {
       rafId = requestAnimationFrame(animate)
       uiTw.update()
       skyDomeUni.uTime.value = performance.now() * 0.001
+
+      camera.position.x += (camFinX - camera.position.x) * 0.1
+      camera.position.y += (camFinY - camera.position.y) * 0.1
 
       const t = performance.now() * 0.001 * params.waveSpeed
       for (let i = 0; i < verts.length; i++) {
