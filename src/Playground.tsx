@@ -122,11 +122,10 @@ const Playground = () => {
     )
     scene.add(skyDome)
 
-    let camFinX = 0
-    let camFinY = 0
+    const camTarget = new THREE.Vector3(0, 0, 50)
 
     const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 1000)
-    camera.position.set(camFinX, camFinY, 50)
+    camera.position.set(0, 0, camTarget.z)
     camera.lookAt(camera.position.clone().add(new THREE.Vector3(0, 0, -1)))
 
     // ── 设计稿 UI 辅助函数 ────────────────────────────────
@@ -463,7 +462,7 @@ const Playground = () => {
       .name('X')
       .onChange((v: number) => {
         if (!params.lockCamera) {
-          camFinX = v
+          camTarget.x = v
         }
       })
     camFolder
@@ -471,7 +470,7 @@ const Playground = () => {
       .name('Y')
       .onChange((v: number) => {
         if (!params.lockCamera) {
-          camFinY = v
+          camTarget.y = v
         }
       })
     camFolder
@@ -491,8 +490,7 @@ const Playground = () => {
       .name('归位并固定')
       .onChange((v: boolean) => {
         if (v) {
-          camFinX = 0
-          camFinY = 0
+          camTarget.set(0, 0, camTarget.z)
         }
       })
     camFolder.open()
@@ -599,8 +597,7 @@ const Playground = () => {
       const sx = x / innerWidth - 0.5
       const sy = y / innerHeight - 0.5
 
-      camFinX = sx * 20
-      camFinY = sy * -10
+      camTarget.set(sx * 20, sy * -10, camTarget.z)
 
       // console.log('sx', sx)
     })
@@ -616,8 +613,7 @@ const Playground = () => {
       uiTw.update()
       skyDomeUni.uTime.value = performance.now() * 0.001
 
-      camera.position.x += (camFinX - camera.position.x) * 0.1
-      camera.position.y += (camFinY - camera.position.y) * 0.1
+      camera.position.lerp(camTarget, 0.1)
 
       const t = performance.now() * 0.001 * params.waveSpeed
       for (let i = 0; i < verts.length; i++) {
