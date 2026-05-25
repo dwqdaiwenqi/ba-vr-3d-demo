@@ -5,14 +5,15 @@ import { createNoise3D } from 'simplex-noise'
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js'
+import { type ClickableSprite, createUISpriteAdder, preloadMaterials } from './uiSprite'
+import { setupGUI, type FloorGridRef } from './setupGUI'
 
 // import bannerUrl from '@/assets/image/banner_title.webp'
 // import navLeftUrl from '@/assets/image/nav_icon_left.webp'
 // import navRightUrl from '@/assets/image/nav_icon_right.webp'
 
 import bannerUrl from '@/assets/image/logo.png'
-import navLeftUrl from '@/assets/image/star.png'
-import navRightUrl from '@/assets/image/star.png'
+import starUrl from '@/assets/image/star.png'
 import StartBtnUrl from '@/assets/image/Vector.png'
 
 const GUI = window.dat.GUI
@@ -136,81 +137,112 @@ const Playground = () => {
     // ── 设计稿 UI 辅助函数 ────────────────────────────────
     const loader = new THREE.TextureLoader()
 
-    function designPxToWorld(dsX: number, dsY: number, z: number, designW: number) {
-      const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 1000)
-      camera.position.set(0, 0, 50)
-      camera.lookAt(camera.position.clone().add(new THREE.Vector3(0, 0, -1)))
-
-      const designScale = innerWidth / designW
-      const ndcX = ((dsX * designScale) / innerWidth) * 2 - 1
-      const ndcY = -((dsY * designScale) / innerHeight) * 2 + 1
-      const ndcPoint = new THREE.Vector3(ndcX, ndcY, 0.5)
-      ndcPoint.unproject(camera)
-      const rayDir = ndcPoint.sub(camera.position).normalize()
-      const t = (z - camera.position.z) / rayDir.z
-      return { worldX: camera.position.x + t * rayDir.x, worldY: camera.position.y + t * rayDir.y }
-    }
-
-    // 可点击的 sprite 列表，用于 raycaster
-    const clickableSprites: {
-      mesh: THREE.Mesh
-      onHover?: (mesh: THREE.Mesh) => void
-      onHoverOut?: (mesh: THREE.Mesh) => void
-      onClick?: (mesh: THREE.Mesh) => void
-    }[] = []
+    const clickableSprites: ClickableSprite[] = []
     let hoveredSpriteMesh: THREE.Mesh | null = null
 
     const raycaster = new THREE.Raycaster()
     const pointerNDC = new THREE.Vector2()
 
-    function addUISprite({
-      file,
-      designW,
-      itemW,
-      left,
-      top,
-      z,
-      onHover,
-      onHoverOut,
-      onClick
-    }: {
-      file: string
-      designW: number
-      itemW: number
-      left: number
-      top: number
-      z: number
-      onHover?: (mesh: THREE.Mesh) => void
-      onHoverOut?: (mesh: THREE.Mesh) => void
-      onClick?: (mesh: THREE.Mesh) => void
-    }) {
-      return new Promise<THREE.Mesh>((resolve) => {
-        loader.load(file, (tex) => {
-          const aspect = tex.image.width / tex.image.height
-          const { worldX: x0, worldY: y0 } = designPxToWorld(left, top, z, designW)
-          const { worldX: x1 } = designPxToWorld(left + itemW, top, z, designW)
-          const w = x1 - x0
-          const h = w / aspect
-          const mesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(w, h),
-            new THREE.MeshBasicMaterial({
-              map: tex,
-              transparent: true,
-              depthWrite: false,
-              depthTest: true,
-              side: THREE.DoubleSide
-            })
-          )
-          mesh.renderOrder = 999
-          mesh.position.set(x0 + w / 2, y0 - h / 2, z)
-          scene.add(mesh)
-          if (onHover || onHoverOut || onClick) {
-            clickableSprites.push({ mesh, onHover, onHoverOut, onClick })
-          }
-          resolve(mesh)
-        })
+    const addUISprite = createUISpriteAdder(scene, clickableSprites)
+
+    preloadMaterials(
+      { banner: bannerUrl, star: starUrl, startBtn: StartBtnUrl },
+      loader,
+      (loaded, total) => console.log(`Loading: ${loaded}/${total}`)
+    ).then((mats) => {
+      // mats['banner'] / mats['startBtn'] 等都是 MeshBasicMaterial，直接传给 addUISprite
+
+      console.log('mats', mats)
+
+      const cx = 1920 / 2
+      const banner = addUISprite({
+        material: mats['banner'],
+        itemW: 800,
+        left: cx - 800 / 2,
+        top: 250,
+        z: 0
       })
-    }
+
+      addUISprite({
+        material: mats['startBtn'],
+        itemW: 300,
+        left: cx - 300 / 2,
+        top: 650,
+        z: 0,
+        onHover: (mesh) => {
+          new TWEEN.Tween(mesh.scale, uiTw)
+            .to({ x: 1.08, y: 1.08 }, 150)
+            .easing(TWEEN.Easing.Quadratic.Out)
+            .start()
+          new TWEEN.Tween((mesh.material as THREE.MeshBasicMaterial).color, uiTw)
+            .to({ r: 1.1, g: 1.1, b: 1.1 }, 150)
+            .start()
+        },
+        onHoverOut: (mesh) => {
+          new TWEEN.Tween(mesh.scale, uiTw)
+            .to({ x: 1.0, y: 1.0 }, 150)
+            .easing(TWEEN.Easing.Quadratic.Out)
+            .start()
+          new TWEEN.Tween((mesh.material as THREE.MeshBasicMaterial).color, uiTw)
+            .to({ r: 1.0, g: 1.0, b: 1.0 }, 150)
+            .start()
+        },
+        onClick: () => {
+          new TWEEN.Tween({ t: 1 }, uiTw)
+            .to({ t: 0 }, 300)
+            .delay(400)
+            .easing(TWEEN.Easing.Quadratic.InOut)
+            .onUpdate((v) => {
+              banner.material.opacity = v.t
+            })
+            .start()
+
+          new TWEEN.Tween({ t: 0 }, uiTw)
+            .to({ t: 7 }, 1500)
+            .easing(TWEEN.Easing.Quadratic.InOut)
+            .onUpdate((v) => {
+              barrelPass.uniforms.maskSoft.value = v.t
+            })
+            .start()
+        }
+      })
+
+      const star1 = addUISprite({
+        material: mats['star'].clone(),
+        itemW: 200,
+        left: cx - 700 - 200 / 2,
+        top: 200,
+        z: -50
+      })
+
+      const star2 = addUISprite({
+        material: mats['star'].clone(),
+        itemW: 200,
+        left: 1920 / 2 + 700 - 200 / 2,
+        top: 200,
+        z: -50
+      })
+
+      star2.rotation.z = 180
+
+      const star3 = addUISprite({
+        material: mats['star'].clone(),
+        itemW: 60,
+        left: cx - 500 - 60 / 2,
+        top: 380,
+        z: -150
+      })
+
+      const star4 = addUISprite({
+        material: mats['star'].clone(),
+        itemW: 60,
+        left: cx + 500 - 60 / 2,
+        top: 380,
+        z: -150
+      })
+
+      star4.rotation.z = 180
+    })
 
     const SEG_X = 100
     const SEG_Y = 100
@@ -404,338 +436,40 @@ const Playground = () => {
 
     const noise3D = createNoise3D()
 
-    Promise.all([
-      addUISprite({
-        file: bannerUrl,
-        designW: 1920,
-        itemW: 800,
-        left: 1920 / 2 - 800 / 2,
-        top: 250,
-        z: 0
-      }),
-      addUISprite({
-        file: navLeftUrl,
-        designW: 1920,
-        itemW: 100,
-        left: 150,
-        top: 500,
-        z: 10
-      }),
-      addUISprite({
-        file: navRightUrl,
-        designW: 1920,
-        itemW: 100,
-        left: 1500,
-        top: 300,
-        z: -40
-      }),
-      addUISprite({
-        file: StartBtnUrl,
-        designW: 1920,
-        itemW: 300,
-        left: 1920 / 2 - 300 / 2,
-        top: 560,
-        z: 0,
-        onHover: (mesh) => {
-          new TWEEN.Tween(mesh.scale, uiTw)
-            .to({ x: 1.08, y: 1.08 }, 150)
-            .easing(TWEEN.Easing.Quadratic.Out)
-            .start()
-          new TWEEN.Tween((mesh.material as THREE.MeshBasicMaterial).color, uiTw)
-            .to({ r: 1.1, g: 1.1, b: 1.1 }, 150)
-            .start()
-        },
-        onHoverOut: (mesh) => {
-          new TWEEN.Tween(mesh.scale, uiTw)
-            .to({ x: 1.0, y: 1.0 }, 150)
-            .easing(TWEEN.Easing.Quadratic.Out)
-            .start()
-          new TWEEN.Tween((mesh.material as THREE.MeshBasicMaterial).color, uiTw)
-            .to({ r: 1.0, g: 1.0, b: 1.0 }, 150)
-            .start()
-        },
-        onClick: () => {
-          new TWEEN.Tween({ t: 1 }, uiTw)
-            .to({ t: 0 }, 300)
-            .delay(400)
-            .easing(TWEEN.Easing.Quadratic.InOut)
-            .onUpdate((v) => {
-              banner.material.opacity = v.t
-            })
-            .start()
-
-          new TWEEN.Tween({ t: 0 }, uiTw)
-            .to({ t: 7 }, 1500)
-            .easing(TWEEN.Easing.Quadratic.InOut)
-            .onUpdate((v) => {
-              barrelPass.uniforms.maskSoft.value = v.t
-            })
-            .start()
-        }
-      })
-    ])
-      .then(([b, i1, i2]) => {
-        banner = b
-        icon1 = i1
-        icon2 = i2
-
-        banner.material.opacity = 1
-        icon1.material.opacity = 1
-        icon2.material.opacity = 1
-      })
-      .catch(() => {
-        // 图片不存在时忽略，直接启动
-      })
-
     // ── dat.GUI ───────────────────────────────────────────
     const gui = new GUI()
-    const params = {
-      planeZ: 0,
-      planeY: 10,
-      planeCurve: -40,
-      waveType: 'radial',
-      waveSpeed: 1,
-      waveAmp: 1,
-      waveFadeStart: 120,
-      waveFadeEnd: 170,
-      maskRX: 0.5,
-      maskRY: 0.5,
-      maskN: 5.5,
-      maskSoft: 0.6,
-      maskColor: '#ffffff',
-      barrel: 0.3,
-      barrelCX: 0.5,
-      barrelCY: 0.5,
-      camX: 0,
-      camY: 0,
-      camZ: 50,
-      axisAngle: 1.2,
-      lockCamera: false
+    const planeCurveRef = { value: planeCurve }
+    const floorRef: FloorGridRef = {
+      gridLines,
+      gridFill,
+      verts,
+      segPairs,
+      linesPosArr,
+      linesGeo,
+      fillPosArr,
+      fillGeo
     }
 
-    const skyDomeParams = {
-      topColor: '#EBF7FF',
-      bottomColor: '#F2F1FF',
-      cloudColor: '#ffffff',
-      gradientPow: 1.8,
-      edge0: 0.25,
-      edge1: 0.6,
-      showCloud: true,
-      cloudCoverage: 0.45,
-      cloudDensity: 0.7,
-      cloudScale: 2.5,
-      cloudSpeed: 0.2
-    }
-
-    gridLines.position.y = params.planeY + 0.1
-    gridLines.position.z = params.planeZ
-    gridFill.position.y = params.planeY
-    gridFill.position.z = params.planeZ
-
-    barrelPass.uniforms.maskSoft.value = params.maskSoft
-
-    camera.rotation.x = params.axisAngle
-
-    const maskFolder = gui.addFolder('VR Mask')
-    maskFolder
-      .add(params, 'maskRX', 0.1, 1.0, 0.01)
-      .name('横轴')
-      .onChange((v: number) => {
-        barrelPass.uniforms.maskRX.value = v
-      })
-    maskFolder
-      .add(params, 'maskRY', 0.1, 1.0, 0.01)
-      .name('纵轴')
-      .onChange((v: number) => {
-        barrelPass.uniforms.maskRY.value = v
-      })
-    maskFolder
-      .add(params, 'maskN', 2, 16, 0.5)
-      .name('圆角程度')
-      .onChange((v: number) => {
-        barrelPass.uniforms.maskN.value = v
-      })
-    maskFolder
-      .add(params, 'maskSoft', 0, 7, 0.01)
-      .name('羽化')
-      .onChange((v: number) => {
-        barrelPass.uniforms.maskSoft.value = v
-      })
-    maskFolder
-      .addColor(params, 'maskColor')
-      .name('遮罩色')
-      .onChange((v: string) => {
-        barrelPass.uniforms.maskColor.value.set(v)
-      })
-    maskFolder
-      .add(params, 'barrel', -1.0, 2.0, 0.01)
-      .name('桶形畸变')
-      .onChange((v: number) => {
-        barrelPass.uniforms.barrel.value = v
-      })
-    maskFolder
-      .add(params, 'barrelCX', 0.0, 1.0, 0.01)
-      .name('畸变中心X')
-      .onChange((v: number) => {
-        barrelPass.uniforms.barrelCenter.value.x = v
-      })
-    maskFolder
-      .add(params, 'barrelCY', 0.0, 1.0, 0.01)
-      .name('畸变中心Y')
-      .onChange((v: number) => {
-        barrelPass.uniforms.barrelCenter.value.y = v
-      })
-    maskFolder.close()
-
-    const waveFolder = gui.addFolder('Wave')
-    waveFolder
-      .add(params, 'waveType', ['traveling', 'interfere', 'radial', 'random', 'noise'])
-      .name('类型')
-    waveFolder.add(params, 'waveSpeed', 0.1, 5, 0.1).name('速度')
-    waveFolder.add(params, 'waveAmp', 0.1, 3, 0.1).name('幅度倍数')
-    waveFolder.add(params, 'waveFadeStart', -200, 200, 1).name('过渡起点')
-    waveFolder.add(params, 'waveFadeEnd', -200, 200, 1).name('过渡终点')
-    waveFolder
-      .add(params, 'planeCurve', -100, 0, 1)
-      .name('地面弯曲')
-      .onChange((v: number) => {
-        planeCurve = v
-
-        console.log('planeCurve', v)
-
-        removeFloorGrid(gridLines, gridFill)
+    const { params } = setupGUI({
+      gui,
+      barrelPass,
+      camera,
+      camTarget,
+      skyDome,
+      uiTw,
+      floorRef,
+      planeCurveRef,
+      createFloorGrid,
+      removeFloorGrid,
+      onFloorRebuild: (result) => {
+        planeCurve = planeCurveRef.value
         ;({ gridLines, gridFill, verts, segPairs, linesPosArr, linesGeo, fillPosArr, fillGeo } =
-          createFloorGrid(planeCurve))
-
-        gridLines.position.y = params.planeY + 0.1
-        gridLines.position.z = params.planeZ
-        gridFill.position.y = params.planeY
-        gridFill.position.z = params.planeZ
-      })
-    waveFolder.close()
-
-    gui.add(params, 'planeZ', -100, 100, 1).onChange((v: number) => {
-      gridLines.position.z = v
-      gridFill.position.z = v
+          result)
+        Object.assign(floorRef, result)
+      }
     })
-    gui.add(params, 'planeY', -100, 100, 1).onChange((v: number) => {
-      gridLines.position.y = v + 0.1
-      gridFill.position.y = v
-    })
-
-    const camFolder = gui.addFolder('Camera')
-    camFolder
-      .add(params, 'camX', -100, 100, 0.5)
-      .name('X')
-      .onChange((v: number) => {
-        if (!params.lockCamera) {
-          camTarget.x = v
-        }
-      })
-    camFolder
-      .add(params, 'camY', -100, 100, 0.5)
-      .name('Y')
-      .onChange((v: number) => {
-        if (!params.lockCamera) {
-          camTarget.y = v
-        }
-      })
-    camFolder
-      .add(params, 'camZ', 10, 500, 0.5)
-      .name('Z')
-      .onChange((v: number) => {
-        camera.position.z = v
-      })
-    camFolder
-      .add(params, 'axisAngle', -1, 1, 0.01)
-      .name('angle')
-      .onChange((v: number) => {
-        camera.rotation.x = v
-      })
-    camFolder
-      .add(params, 'lockCamera')
-      .name('归位并固定')
-      .onChange((v: boolean) => {
-        if (v) {
-          camTarget.set(0, 0, camTarget.z)
-        }
-      })
-    camFolder.open()
 
     const skyDomeUni = (skyDome.material as THREE.ShaderMaterial).uniforms
-
-    skyDomeUni.uGradientPow.value = skyDomeParams.gradientPow
-    skyDomeUni.uCloudSpeed.value = skyDomeParams.cloudSpeed
-    skyDomeUni.uEdge0.value = skyDomeParams.edge0
-
-    const skyDomeFolder = gui.addFolder('Sky')
-    skyDomeFolder
-      .addColor(skyDomeParams, 'topColor')
-      .name('顶部颜色')
-      .onChange((v: string) => {
-        skyDomeUni.uTopColor.value.set(v)
-      })
-    skyDomeFolder
-      .addColor(skyDomeParams, 'bottomColor')
-      .name('底部颜色')
-      .onChange((v: string) => {
-        skyDomeUni.uBottomColor.value.set(v)
-      })
-    skyDomeFolder
-      .addColor(skyDomeParams, 'cloudColor')
-      .name('云朵颜色')
-      .onChange((v: string) => {
-        skyDomeUni.uCloudColor.value.set(v)
-      })
-    skyDomeFolder
-      .add(skyDomeParams, 'cloudCoverage', 0, 1, 0.01)
-      .name('云量')
-      .onChange((v: number) => {
-        skyDomeUni.uCloudCoverage.value = v
-      })
-    skyDomeFolder
-      .add(skyDomeParams, 'cloudDensity', 0, 1, 0.01)
-      .name('云密度')
-      .onChange((v: number) => {
-        skyDomeUni.uCloudDensity.value = v
-      })
-    skyDomeFolder
-      .add(skyDomeParams, 'cloudScale', 0.5, 10, 0.1)
-      .name('云尺寸')
-      .onChange((v: number) => {
-        skyDomeUni.uCloudScale.value = v
-      })
-    skyDomeFolder
-      .add(skyDomeParams, 'cloudSpeed', 0, 0.3, 0.001)
-      .name('云速度')
-      .onChange((v: number) => {
-        skyDomeUni.uCloudSpeed.value = v
-      })
-    skyDomeFolder
-      .add(skyDomeParams, 'gradientPow', 0.1, 3.0, 0.01)
-      .name('渐变曲线')
-      .onChange((v: number) => {
-        skyDomeUni.uGradientPow.value = v
-      })
-    skyDomeFolder
-      .add(skyDomeParams, 'edge0', 0.0, 1.0, 0.01)
-      .name('交界起点')
-      .onChange((v: number) => {
-        skyDomeUni.uEdge0.value = v
-      })
-    skyDomeFolder
-      .add(skyDomeParams, 'edge1', 0.0, 1.0, 0.01)
-      .name('交界终点')
-      .onChange((v: number) => {
-        skyDomeUni.uEdge1.value = v
-      })
-    skyDomeFolder
-      .add(skyDomeParams, 'showCloud')
-      .name('显示云朵')
-      .onChange((v: boolean) => {
-        skyDomeUni.uShowCloud.value = v ? 1.0 : 0.0
-      })
-    skyDomeFolder.open()
 
     // ── 入场动画 ──────────────────────────────────────────
     new TWEEN.Tween({ rx: params.axisAngle }, uiTw)
