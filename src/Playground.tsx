@@ -193,68 +193,114 @@ const Playground = () => {
     const ROWS = SEG_Y + 1
     const HALF = SIZE / 2
 
-    const segPairs: [number, number][] = []
-    const verts: { x: number; y: number; z: number; initZ: number; phase: number; amp: number }[] =
-      []
+    let planeCurve = -20
 
-    for (let row = 0; row <= SEG_Y; row++) {
-      for (let col = 0; col <= SEG_X; col++) {
-        const x = col * (SIZE / SEG_X) - HALF
-        const y = row * (SIZE / SEG_Y) - HALF
-        const t = (row * COLS + col) / (COLS * ROWS)
-        const initZ = Math.sin(t * Math.PI) * -40
-        verts.push({
-          x,
-          y,
-          z: initZ,
-          initZ,
-          phase: Math.random() * Math.PI * 2,
-          amp: Math.random() * 10 + 5
+    // ── 地面网格（线框 + 填充面）────────────────────────────
+    function createFloorGrid(curve: number) {
+      type Vert = { x: number; y: number; z: number; initZ: number; phase: number; amp: number }
+      const verts: Vert[] = []
+      const segPairs: [number, number][] = []
+
+      // 生成顶点数据
+      for (let row = 0; row <= SEG_Y; row++) {
+        for (let col = 0; col <= SEG_X; col++) {
+          const x = col * (SIZE / SEG_X) - HALF
+          const y = row * (SIZE / SEG_Y) - HALF
+          const t = (row * COLS + col) / (COLS * ROWS)
+          const initZ = Math.sin(t * Math.PI) * curve
+          verts.push({
+            x,
+            y,
+            z: initZ,
+            initZ,
+            phase: Math.random() * Math.PI * 2,
+            amp: Math.random() * 10 + 5
+          })
+          const i = row * COLS + col
+          if (col < SEG_X) segPairs.push([i, i + 1])
+          if (row < SEG_Y) segPairs.push([i, (row + 1) * COLS + col])
+        }
+      }
+
+      // 线框层：网格线，比填充面稍微高一点避免 z-fighting
+      const linesPosArr = new Float32Array(segPairs.length * 6)
+      const linesGeo = new THREE.BufferGeometry()
+      linesGeo.setAttribute('position', new THREE.BufferAttribute(linesPosArr, 3))
+      const gridLines = new THREE.LineSegments(
+        linesGeo,
+        new THREE.LineBasicMaterial({ color: '#88b0d8', transparent: true, opacity: 0.7 })
+      )
+      gridLines.rotation.x = -Math.PI / 2
+      gridLines.rotation.z = Math.PI / 2
+      scene.add(gridLines)
+
+      // 填充面层：纯色面片，提供地面颜色底色
+      const fillPosArr = new Float32Array(verts.length * 3)
+      const meshIndices: number[] = []
+      for (let row = 0; row < SEG_Y; row++) {
+        for (let col = 0; col < SEG_X; col++) {
+          const a = row * COLS + col
+          const b = row * COLS + col + 1
+          const c = (row + 1) * COLS + col
+          const d = (row + 1) * COLS + col + 1
+          meshIndices.push(a, b, d, a, d, c)
+        }
+      }
+      const fillGeo = new THREE.BufferGeometry()
+      fillGeo.setAttribute('position', new THREE.BufferAttribute(fillPosArr, 3))
+      fillGeo.setIndex(meshIndices)
+      const gridFill = new THREE.Mesh(
+        fillGeo,
+        new THREE.MeshBasicMaterial({
+          color: '#dde8f8',
+          transparent: true,
+          opacity: 1,
+          side: THREE.DoubleSide,
+          fog: true
         })
+      )
+      gridFill.rotation.x = -Math.PI / 2
+      gridFill.rotation.z = Math.PI / 2
+      scene.add(gridFill)
 
-        const i = row * COLS + col
-        if (col < SEG_X) segPairs.push([i, i + 1])
-        if (row < SEG_Y) segPairs.push([i, (row + 1) * COLS + col])
-      }
+      return { gridLines, gridFill, verts, segPairs, linesPosArr, linesGeo, fillPosArr, fillGeo }
     }
 
-    const lineArr = new Float32Array(segPairs.length * 6)
-    const lineGeo = new THREE.BufferGeometry()
-    lineGeo.setAttribute('position', new THREE.BufferAttribute(lineArr, 3))
-
-    const plane = new THREE.LineSegments(
-      lineGeo,
-      new THREE.LineBasicMaterial({ color: '#88b0d8', transparent: true, opacity: 0.7 })
-    )
-    plane.rotation.x = -Math.PI / 2
-    plane.rotation.z = Math.PI / 2
-    scene.add(plane)
-
-    const meshPosArr = new Float32Array(verts.length * 3)
-    const meshIndices: number[] = []
-    for (let row = 0; row < SEG_Y; row++) {
-      for (let col = 0; col < SEG_X; col++) {
-        const a = row * COLS + col
-        const b = row * COLS + col + 1
-        const c = (row + 1) * COLS + col
-        const d = (row + 1) * COLS + col + 1
-        meshIndices.push(a, b, d, a, d, c)
-      }
+    function removeFloorGrid(gridLines: THREE.LineSegments, gridFill: THREE.Mesh) {
+      scene.remove(gridLines)
+      scene.remove(gridFill)
+      gridLines.geometry.dispose()
+      ;(gridLines.material as THREE.Material).dispose()
+      gridFill.geometry.dispose()
+      ;(gridFill.material as THREE.Material).dispose()
     }
-    const meshGeo = new THREE.BufferGeometry()
-    meshGeo.setAttribute('position', new THREE.BufferAttribute(meshPosArr, 3))
-    meshGeo.setIndex(meshIndices)
-    const meshMat = new THREE.MeshBasicMaterial({
-      color: '#dde8f8',
-      transparent: true,
-      opacity: 1,
-      side: THREE.DoubleSide,
-      fog: true
-    })
-    const fillMesh = new THREE.Mesh(meshGeo, meshMat)
-    fillMesh.rotation.x = -Math.PI / 2
-    fillMesh.rotation.z = Math.PI / 2
-    scene.add(fillMesh)
+
+    const updateGridLineBuffer = () => {
+      for (let s = 0; s < segPairs.length; s++) {
+        const [indexA, indexB] = segPairs[s]
+        const a = verts[indexA]
+        const b = verts[indexB]
+        const offset = s * 6
+        linesPosArr[offset + 0] = a.x
+        linesPosArr[offset + 1] = a.y
+        linesPosArr[offset + 2] = a.z
+        linesPosArr[offset + 3] = b.x
+        linesPosArr[offset + 4] = b.y
+        linesPosArr[offset + 5] = b.z
+      }
+      linesGeo.attributes.position.needsUpdate = true
+    }
+    const updateGridFillBuffer = () => {
+      for (let i = 0; i < verts.length; i++) {
+        fillPosArr[i * 3 + 0] = verts[i].x
+        fillPosArr[i * 3 + 1] = verts[i].y
+        fillPosArr[i * 3 + 2] = verts[i].z
+      }
+      fillGeo.attributes.position.needsUpdate = true
+    }
+
+    let { gridLines, gridFill, verts, segPairs, linesPosArr, linesGeo, fillPosArr, fillGeo } =
+      createFloorGrid(planeCurve)
 
     // ── 后处理：VR 遮罩 ───────────────────────────────────
     const BarrelShader = {
@@ -264,7 +310,9 @@ const Playground = () => {
         maskRY: { value: 0.5 },
         maskN: { value: 5.5 },
         maskSoft: { value: 0 },
-        maskColor: { value: new THREE.Color(1, 1, 1) }
+        maskColor: { value: new THREE.Color(1, 1, 1) },
+        barrel: { value: 0.3 },
+        barrelCenter: { value: new THREE.Vector2(0.5, 0.5) }
       },
       vertexShader: /* glsl */ `
         varying vec2 vUv;
@@ -280,13 +328,44 @@ const Playground = () => {
         uniform float maskN;
         uniform float maskSoft;
         uniform vec3 maskColor;
+        uniform float barrel;
+        uniform vec2 barrelCenter;
         varying vec2 vUv;
 
+        vec2 distort(vec2 uv, float k) {
+          // scale: 整体缩小采样范围，防止畸变后边角超出 0~1 导致拉伸
+          // k 越大缩得越小，刚好让边角畸变后落在边界内
+          float scale = 1.0 + k * 0.5;
+
+          // d: 从畸变中心 → 当前像素的偏移向量
+          // 除以 scale 是把坐标整体往中心收一点
+          // 例如 uv=(0.8,0.5), center=(0.5,0.5) → d=(0.3,0.0)/scale
+          vec2 d = (uv - barrelCenter) / scale;
+
+          // dist: 当前像素离中心的距离（标量）
+          // 越靠边缘 dist 越大
+          float dist = length(d);
+
+          // 拉伸 d 向量：离中心越远，d 被拉得越长
+          // (1.0 + k * dist) 是拉伸系数，dist=0 时系数=1不变，dist越大系数越大
+          // 最后加回 barrelCenter，得到畸变后的采样坐标
+          return barrelCenter + d * (1.0 + k * dist);
+        }
+
         void main() {
-          vec4 color = texture2D(tDiffuse, vUv);
+          // ── 超椭圆遮罩 ──
           vec2 d = abs(vUv - vec2(0.5, 0.5)) / vec2(maskRX, maskRY);
           float dist = pow(pow(d.x, maskN) + pow(d.y, maskN), 1.0 / maskN);
           float mask = smoothstep(1.0 - maskSoft, 1.0, dist);
+
+          if (mask >= 1.0) {
+            gl_FragColor = vec4(maskColor, 1.0);
+            return;
+          }
+
+          // ── 桶形畸变 ──
+          vec2 uv = distort(vUv, barrel);
+          vec4 color = texture2D(tDiffuse, uv);
           gl_FragColor = vec4(mix(color.rgb, maskColor, mask), 1.0);
         }
       `
@@ -368,6 +447,7 @@ const Playground = () => {
     const params = {
       planeZ: 0,
       planeY: 18,
+      planeCurve: -40,
       waveType: 'radial',
       waveSpeed: 1,
       waveAmp: 1,
@@ -376,6 +456,9 @@ const Playground = () => {
       maskN: 5.5,
       maskSoft: 0.6,
       maskColor: '#ffffff',
+      barrel: 0.3,
+      barrelCX: 0.5,
+      barrelCY: 0.5,
       camX: 0,
       camY: 0,
       camZ: 50,
@@ -397,10 +480,10 @@ const Playground = () => {
       cloudSpeed: 0.1
     }
 
-    plane.position.y = params.planeY + 0.1
-    plane.position.z = params.planeZ
-    fillMesh.position.y = params.planeY
-    fillMesh.position.z = params.planeZ
+    gridLines.position.y = params.planeY + 0.1
+    gridLines.position.z = params.planeZ
+    gridFill.position.y = params.planeY
+    gridFill.position.z = params.planeZ
 
     barrelPass.uniforms.maskSoft.value = params.maskSoft
 
@@ -437,6 +520,24 @@ const Playground = () => {
       .onChange((v: string) => {
         barrelPass.uniforms.maskColor.value.set(v)
       })
+    maskFolder
+      .add(params, 'barrel', -1.0, 2.0, 0.01)
+      .name('桶形畸变')
+      .onChange((v: number) => {
+        barrelPass.uniforms.barrel.value = v
+      })
+    maskFolder
+      .add(params, 'barrelCX', 0.0, 1.0, 0.01)
+      .name('畸变中心X')
+      .onChange((v: number) => {
+        barrelPass.uniforms.barrelCenter.value.x = v
+      })
+    maskFolder
+      .add(params, 'barrelCY', 0.0, 1.0, 0.01)
+      .name('畸变中心Y')
+      .onChange((v: number) => {
+        barrelPass.uniforms.barrelCenter.value.y = v
+      })
     maskFolder.close()
 
     const waveFolder = gui.addFolder('Wave')
@@ -445,15 +546,32 @@ const Playground = () => {
       .name('类型')
     waveFolder.add(params, 'waveSpeed', 0.1, 5, 0.1).name('速度')
     waveFolder.add(params, 'waveAmp', 0.1, 3, 0.1).name('幅度倍数')
+    waveFolder
+      .add(params, 'planeCurve', -100, 0, 1)
+      .name('地面弯曲')
+      .onChange((v: number) => {
+        planeCurve = v
+
+        console.log('planeCurve', v)
+
+        removeFloorGrid(gridLines, gridFill)
+        ;({ gridLines, gridFill, verts, segPairs, linesPosArr, linesGeo, fillPosArr, fillGeo } =
+          createFloorGrid(planeCurve))
+
+        gridLines.position.y = params.planeY + 0.1
+        gridLines.position.z = params.planeZ
+        gridFill.position.y = params.planeY
+        gridFill.position.z = params.planeZ
+      })
     waveFolder.close()
 
     gui.add(params, 'planeZ', -100, 100, 1).onChange((v: number) => {
-      plane.position.z = v
-      fillMesh.position.z = v
+      gridLines.position.z = v
+      gridFill.position.z = v
     })
     gui.add(params, 'planeY', -100, 100, 1).onChange((v: number) => {
-      plane.position.y = v + 0.1
-      fillMesh.position.y = v
+      gridLines.position.y = v + 0.1
+      gridFill.position.y = v
     })
 
     const camFolder = gui.addFolder('Camera')
@@ -642,26 +760,8 @@ const Playground = () => {
         v.z = v.initZ + n * v.amp * params.waveAmp
       }
 
-      for (let s = 0; s < segPairs.length; s++) {
-        const [indexA, indexB] = segPairs[s]
-        const a = verts[indexA]
-        const b = verts[indexB]
-        const offset = s * 6
-        lineArr[offset + 0] = a.x
-        lineArr[offset + 1] = a.y
-        lineArr[offset + 2] = a.z
-        lineArr[offset + 3] = b.x
-        lineArr[offset + 4] = b.y
-        lineArr[offset + 5] = b.z
-      }
-      lineGeo.attributes.position.needsUpdate = true
-
-      for (let i = 0; i < verts.length; i++) {
-        meshPosArr[i * 3 + 0] = verts[i].x
-        meshPosArr[i * 3 + 1] = verts[i].y
-        meshPosArr[i * 3 + 2] = verts[i].z
-      }
-      meshGeo.attributes.position.needsUpdate = true
+      updateGridFillBuffer()
+      updateGridLineBuffer()
 
       composer.render()
     }
