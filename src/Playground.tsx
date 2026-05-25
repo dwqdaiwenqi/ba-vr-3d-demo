@@ -6,9 +6,14 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js'
 
-import bannerUrl from '@/assets/image/banner_title.webp'
-import navLeftUrl from '@/assets/image/nav_icon_left.webp'
-import navRightUrl from '@/assets/image/nav_icon_right.webp'
+// import bannerUrl from '@/assets/image/banner_title.webp'
+// import navLeftUrl from '@/assets/image/nav_icon_left.webp'
+// import navRightUrl from '@/assets/image/nav_icon_right.webp'
+
+import bannerUrl from '@/assets/image/logo.png'
+import navLeftUrl from '@/assets/image/star.png'
+import navRightUrl from '@/assets/image/star.png'
+import StartBtnUrl from '@/assets/image/Vector.png'
 
 const GUI = window.dat.GUI
 
@@ -146,13 +151,28 @@ const Playground = () => {
       return { worldX: camera.position.x + t * rayDir.x, worldY: camera.position.y + t * rayDir.y }
     }
 
+    // 可点击的 sprite 列表，用于 raycaster
+    const clickableSprites: {
+      mesh: THREE.Mesh
+      onHover?: (mesh: THREE.Mesh) => void
+      onHoverOut?: (mesh: THREE.Mesh) => void
+      onClick?: (mesh: THREE.Mesh) => void
+    }[] = []
+    let hoveredSpriteMesh: THREE.Mesh | null = null
+
+    const raycaster = new THREE.Raycaster()
+    const pointerNDC = new THREE.Vector2()
+
     function addUISprite({
       file,
       designW,
       itemW,
       left,
       top,
-      z
+      z,
+      onHover,
+      onHoverOut,
+      onClick
     }: {
       file: string
       designW: number
@@ -160,6 +180,9 @@ const Playground = () => {
       left: number
       top: number
       z: number
+      onHover?: (mesh: THREE.Mesh) => void
+      onHoverOut?: (mesh: THREE.Mesh) => void
+      onClick?: (mesh: THREE.Mesh) => void
     }) {
       return new Promise<THREE.Mesh>((resolve) => {
         loader.load(file, (tex) => {
@@ -181,6 +204,9 @@ const Playground = () => {
           mesh.renderOrder = 999
           mesh.position.set(x0 + w / 2, y0 - h / 2, z)
           scene.add(mesh)
+          if (onHover || onHoverOut || onClick) {
+            clickableSprites.push({ mesh, onHover, onHoverOut, onClick })
+          }
           resolve(mesh)
         })
       })
@@ -382,26 +408,70 @@ const Playground = () => {
       addUISprite({
         file: bannerUrl,
         designW: 1920,
-        itemW: 1000,
-        left: 400,
-        top: 300,
+        itemW: 800,
+        left: 1920 / 2 - 800 / 2,
+        top: 250,
         z: 0
       }),
       addUISprite({
         file: navLeftUrl,
         designW: 1920,
-        itemW: 150,
-        left: 100,
+        itemW: 100,
+        left: 150,
         top: 500,
         z: 10
       }),
       addUISprite({
         file: navRightUrl,
         designW: 1920,
-        itemW: 150,
+        itemW: 100,
         left: 1500,
         top: 300,
         z: -40
+      }),
+      addUISprite({
+        file: StartBtnUrl,
+        designW: 1920,
+        itemW: 300,
+        left: 1920 / 2 - 300 / 2,
+        top: 560,
+        z: 0,
+        onHover: (mesh) => {
+          new TWEEN.Tween(mesh.scale, uiTw)
+            .to({ x: 1.08, y: 1.08 }, 150)
+            .easing(TWEEN.Easing.Quadratic.Out)
+            .start()
+          new TWEEN.Tween((mesh.material as THREE.MeshBasicMaterial).color, uiTw)
+            .to({ r: 1.1, g: 1.1, b: 1.1 }, 150)
+            .start()
+        },
+        onHoverOut: (mesh) => {
+          new TWEEN.Tween(mesh.scale, uiTw)
+            .to({ x: 1.0, y: 1.0 }, 150)
+            .easing(TWEEN.Easing.Quadratic.Out)
+            .start()
+          new TWEEN.Tween((mesh.material as THREE.MeshBasicMaterial).color, uiTw)
+            .to({ r: 1.0, g: 1.0, b: 1.0 }, 150)
+            .start()
+        },
+        onClick: () => {
+          new TWEEN.Tween({ t: 1 }, uiTw)
+            .to({ t: 0 }, 300)
+            .delay(400)
+            .easing(TWEEN.Easing.Quadratic.InOut)
+            .onUpdate((v) => {
+              banner.material.opacity = v.t
+            })
+            .start()
+
+          new TWEEN.Tween({ t: 0 }, uiTw)
+            .to({ t: 7 }, 1500)
+            .easing(TWEEN.Easing.Quadratic.InOut)
+            .onUpdate((v) => {
+              barrelPass.uniforms.maskSoft.value = v.t
+            })
+            .start()
+        }
       })
     ])
       .then(([b, i1, i2]) => {
@@ -446,7 +516,7 @@ const Playground = () => {
     const gui = new GUI()
     const params = {
       planeZ: 0,
-      planeY: 18,
+      planeY: 10,
       planeCurve: -40,
       waveType: 'radial',
       waveSpeed: 1,
@@ -509,7 +579,7 @@ const Playground = () => {
         barrelPass.uniforms.maskN.value = v
       })
     maskFolder
-      .add(params, 'maskSoft', 0, 4, 0.01)
+      .add(params, 'maskSoft', 0, 7, 0.01)
       .name('羽化')
       .onChange((v: number) => {
         barrelPass.uniforms.maskSoft.value = v
@@ -715,9 +785,37 @@ const Playground = () => {
       const sx = x / innerWidth - 0.5
       const sy = y / innerHeight - 0.5
 
-      camTarget.set(sx * 20, sy * -10, camTarget.z)
+      camTarget.set(sx * 8, sy * -4, camTarget.z)
 
-      // console.log('sx', sx)
+      // hover cursor & 触发 onHover / onHoverOut 回调
+      pointerNDC.set((x / innerWidth) * 2 - 1, -(y / innerHeight) * 2 + 1)
+      raycaster.setFromCamera(pointerNDC, camera)
+      const hovered = raycaster.intersectObjects(clickableSprites.map((s) => s.mesh))
+      const newHovered = hovered.length > 0 ? (hovered[0].object as THREE.Mesh) : null
+
+      if (newHovered !== hoveredSpriteMesh) {
+        if (hoveredSpriteMesh) {
+          const prev = clickableSprites.find((s) => s.mesh === hoveredSpriteMesh)
+          prev?.onHoverOut?.(hoveredSpriteMesh)
+        }
+        if (newHovered) {
+          const next = clickableSprites.find((s) => s.mesh === newHovered)
+          next?.onHover?.(newHovered)
+        }
+        hoveredSpriteMesh = newHovered
+      }
+
+      renderer.domElement.style.cursor = hoveredSpriteMesh ? 'pointer' : ''
+    })
+
+    addEventListener('click', (e) => {
+      pointerNDC.set((e.pageX / innerWidth) * 2 - 1, -(e.pageY / innerHeight) * 2 + 1)
+      raycaster.setFromCamera(pointerNDC, camera)
+      const hits = raycaster.intersectObjects(clickableSprites.map((s) => s.mesh))
+      if (hits.length > 0) {
+        const hit = clickableSprites.find((s) => s.mesh === hits[0].object)
+        if (hit) hit.onClick?.(hit.mesh)
+      }
     })
 
     // ── 动画循环 ──────────────────────────────────────────
