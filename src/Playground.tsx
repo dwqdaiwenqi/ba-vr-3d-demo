@@ -482,31 +482,6 @@ const Playground = () => {
         banner.material.opacity = 1
         icon1.material.opacity = 1
         icon2.material.opacity = 1
-
-        // new TWEEN.Tween({ t: 0 }, uiTw)
-        //   .to({ t: 1 }, 500)
-        //   .easing(TWEEN.Easing.Quadratic.InOut)
-        //   .delay(1500)
-        //   .onUpdate((obj: { t: number }) => {
-        //     if (banner) (banner.material as THREE.MeshBasicMaterial).opacity = obj.t
-        //   })
-        //   .start()
-        // new TWEEN.Tween({ t: 0 }, uiTw)
-        //   .to({ t: 1 }, 500)
-        //   .easing(TWEEN.Easing.Quadratic.InOut)
-        //   .delay(2000)
-        //   .onUpdate((obj: { t: number }) => {
-        //     if (icon1) (icon1.material as THREE.MeshBasicMaterial).opacity = obj.t
-        //   })
-        //   .start()
-        // new TWEEN.Tween({ t: 0 }, uiTw)
-        //   .to({ t: 1 }, 400)
-        //   .easing(TWEEN.Easing.Quadratic.InOut)
-        //   .delay(2500)
-        //   .onUpdate((obj: { t: number }) => {
-        //     if (icon2) (icon2.material as THREE.MeshBasicMaterial).opacity = obj.t
-        //   })
-        //   .start()
       })
       .catch(() => {
         // 图片不存在时忽略，直接启动
@@ -521,6 +496,8 @@ const Playground = () => {
       waveType: 'radial',
       waveSpeed: 1,
       waveAmp: 1,
+      waveFadeStart: 120,
+      waveFadeEnd: 170,
       maskRX: 0.5,
       maskRY: 0.5,
       maskN: 5.5,
@@ -547,7 +524,7 @@ const Playground = () => {
       cloudCoverage: 0.45,
       cloudDensity: 0.7,
       cloudScale: 2.5,
-      cloudSpeed: 0.1
+      cloudSpeed: 0.2
     }
 
     gridLines.position.y = params.planeY + 0.1
@@ -616,6 +593,8 @@ const Playground = () => {
       .name('类型')
     waveFolder.add(params, 'waveSpeed', 0.1, 5, 0.1).name('速度')
     waveFolder.add(params, 'waveAmp', 0.1, 3, 0.1).name('幅度倍数')
+    waveFolder.add(params, 'waveFadeStart', -200, 200, 1).name('过渡起点')
+    waveFolder.add(params, 'waveFadeEnd', -200, 200, 1).name('过渡终点')
     waveFolder
       .add(params, 'planeCurve', -100, 0, 1)
       .name('地面弯曲')
@@ -727,7 +706,7 @@ const Playground = () => {
         skyDomeUni.uCloudScale.value = v
       })
     skyDomeFolder
-      .add(skyDomeParams, 'cloudSpeed', 0, 0.1, 0.001)
+      .add(skyDomeParams, 'cloudSpeed', 0, 0.3, 0.001)
       .name('云速度')
       .onChange((v: number) => {
         skyDomeUni.uCloudSpeed.value = v
@@ -834,7 +813,12 @@ const Playground = () => {
       const t = performance.now() * 0.001 * params.waveSpeed
       for (let i = 0; i < verts.length; i++) {
         const v = verts[i]
-        if (v.x < 170) continue
+        // smoothstep 过渡：waveFadeStart~waveFadeEnd 区间内从 0 平滑到 1
+        const raw = (v.x - params.waveFadeStart) / (params.waveFadeEnd - params.waveFadeStart)
+        const t01 = Math.max(0, Math.min(1, raw))
+        const waveFade = t01 * t01 * (3 - 2 * t01)
+
+        if (waveFade === 0) continue
         let n = 0
         switch (params.waveType) {
           case 'traveling':
@@ -855,7 +839,7 @@ const Playground = () => {
             n = noise3D(v.x * 0.02, v.y * 0.02, t * 0.4)
             break
         }
-        v.z = v.initZ + n * v.amp * params.waveAmp
+        v.z = v.initZ + n * v.amp * params.waveAmp * waveFade
       }
 
       updateGridFillBuffer()
