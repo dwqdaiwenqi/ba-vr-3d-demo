@@ -140,7 +140,7 @@ export function setupGUI(deps: SetupGUIDeps): { params: Params; skyDomeParams: S
   skyDomeUni.uEdge0.value = skyDomeParams.edge0
 
   // ── VR Mask ──────────────────────────────────────────────
-  const maskFolder = gui.addFolder('VR Mask')
+  const maskFolder = gui.addFolder('VR')
   maskFolder
     .add(params, 'maskRX', 0.1, 1.0, 0.01)
     .name('横轴')
@@ -173,19 +173,19 @@ export function setupGUI(deps: SetupGUIDeps): { params: Params; skyDomeParams: S
     })
   maskFolder
     .add(params, 'barrel', -1.0, 2.0, 0.01)
-    .name('桶形畸变')
+    .name('畸变')
     .onChange((v: number) => {
       barrelPass.uniforms.barrel.value = v
     })
   maskFolder
     .add(params, 'barrelCX', 0.0, 1.0, 0.01)
-    .name('畸变中心X')
+    .name('畸变CX')
     .onChange((v: number) => {
       barrelPass.uniforms.barrelCenter.value.x = v
     })
   maskFolder
     .add(params, 'barrelCY', 0.0, 1.0, 0.01)
-    .name('畸变中心Y')
+    .name('畸变CY')
     .onChange((v: number) => {
       barrelPass.uniforms.barrelCenter.value.y = v
     })
@@ -200,9 +200,13 @@ export function setupGUI(deps: SetupGUIDeps): { params: Params; skyDomeParams: S
   waveFolder.add(params, 'waveAmp', 0.1, 3, 0.1).name('幅度倍数')
   waveFolder.add(params, 'waveFadeStart', -200, 200, 1).name('过渡起点')
   waveFolder.add(params, 'waveFadeEnd', -200, 200, 1).name('过渡终点')
-  waveFolder
+
+  waveFolder.close()
+
+  const planeFolder = gui.addFolder('Buffer')
+  planeFolder
     .add(params, 'planeCurve', -100, 0, 1)
-    .name('地面弯曲')
+    .name('弯曲')
     .onChange((v: number) => {
       planeCurveRef.value = v
       removeFloorGrid(floorRef.gridLines, floorRef.gridFill)
@@ -213,37 +217,30 @@ export function setupGUI(deps: SetupGUIDeps): { params: Params; skyDomeParams: S
       result.gridFill.position.y = params.planeY
       result.gridFill.position.z = params.planeZ
     })
-  waveFolder.close()
 
-  // ── Plane ────────────────────────────────────────────────
-  gui.add(params, 'planeZ', -100, 100, 1).onChange((v: number) => {
+  planeFolder.add(params, 'planeZ', -50, 50, 1).onChange((v: number) => {
     floorRef.gridLines.position.z = v
     floorRef.gridFill.position.z = v
   })
-  gui.add(params, 'planeY', -100, 100, 1).onChange((v: number) => {
+  planeFolder.add(params, 'planeY', -100, 100, 1).onChange((v: number) => {
     floorRef.gridLines.position.y = v + 0.1
     floorRef.gridFill.position.y = v
   })
+  planeFolder.close()
 
   // ── Camera ───────────────────────────────────────────────
   const camFolder = gui.addFolder('Camera')
   camFolder
-    .add(params, 'camX', -100, 100, 0.5)
+    .add(params, 'camX', -20, 20, 0.1)
     .name('X')
     .onChange((v: number) => {
       if (!params.lockCamera) camTarget.x = v
     })
   camFolder
-    .add(params, 'camY', -100, 100, 0.5)
+    .add(params, 'camY', -10, 10, 0.1)
     .name('Y')
     .onChange((v: number) => {
       if (!params.lockCamera) camTarget.y = v
-    })
-  camFolder
-    .add(params, 'camZ', 10, 500, 0.5)
-    .name('Z')
-    .onChange((v: number) => {
-      camera.position.z = v
     })
   camFolder
     .add(params, 'axisAngle', -1, 1, 0.01)
@@ -251,12 +248,7 @@ export function setupGUI(deps: SetupGUIDeps): { params: Params; skyDomeParams: S
     .onChange((v: number) => {
       ;(camera as THREE.PerspectiveCamera).rotation.x = v
     })
-  camFolder
-    .add(params, 'lockCamera')
-    .name('归位并固定')
-    .onChange((v: boolean) => {
-      if (v) camTarget.set(0, 0, camTarget.z)
-    })
+
   camFolder.close()
 
   // ── Sky ──────────────────────────────────────────────────
@@ -309,6 +301,7 @@ export function setupGUI(deps: SetupGUIDeps): { params: Params; skyDomeParams: S
     .onChange((v: number) => {
       skyDomeUni.uGradientPow.value = v
     })
+
   skyDomeFolder
     .add(skyDomeParams, 'edge0', 0.0, 1.0, 0.01)
     .name('交界起点')
@@ -328,6 +321,13 @@ export function setupGUI(deps: SetupGUIDeps): { params: Params; skyDomeParams: S
       skyDomeUni.uShowCloud.value = v ? 1.0 : 0.0
     })
   skyDomeFolder.close()
+
+  gui
+    .add(params, 'lockCamera')
+    .name('归位并固定')
+    .onChange((v: boolean) => {
+      if (v) camTarget.set(0, 0, camTarget.z)
+    })
 
   return { params, skyDomeParams }
 }

@@ -5,12 +5,18 @@ import { createNoise3D } from 'simplex-noise'
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js'
-import { type ClickableSprite, createUISpriteAdder, preloadMaterials } from './uiSprite'
+import {
+  type ClickableSprite,
+  createUISpriteAdder,
+  createPointerHandler,
+  preloadMaterials
+} from './uiSprite'
 import { setupGUI, type FloorGridRef } from './setupGUI'
-
-// import bannerUrl from '@/assets/image/banner_title.webp'
-// import navLeftUrl from '@/assets/image/nav_icon_left.webp'
-// import navRightUrl from '@/assets/image/nav_icon_right.webp'
+import { waveFns, createNoiseFn } from './waveTypes'
+import skyDomeVert from './shaders/skyDome.vert.glsl?raw'
+import skyDomeFrag from './shaders/skyDome.frag.glsl?raw'
+import barrelVert from './shaders/barrel.vert.glsl?raw'
+import barrelFrag from './shaders/barrel.frag.glsl?raw'
 
 import bannerUrl from '@/assets/image/logo.png'
 import starUrl from '@/assets/image/star.png'
@@ -57,73 +63,8 @@ const Playground = () => {
           uEdge0: { value: 0.4 },
           uEdge1: { value: 0.6 }
         },
-        vertexShader: /* glsl */ `
-          varying vec3 vWorldDir;
-          void main() {
-            vWorldDir = normalize((modelMatrix * vec4(position, 0.0)).xyz);
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-          }
-        `,
-        fragmentShader: /* glsl */ `
-          uniform float uTime;
-          uniform vec3  uTopColor;
-          uniform vec3  uBottomColor;
-          uniform vec3  uCloudColor;
-          uniform float uCloudCoverage;
-          uniform float uCloudDensity;
-          uniform float uCloudScale;
-          uniform float uCloudSpeed;
-          uniform float uGradientPow;
-          uniform float uShowCloud;
-          uniform float uEdge0;
-          uniform float uEdge1;
-          varying vec3 vWorldDir;
-
-          float hash(vec2 p) {
-            p = fract(p * vec2(127.1, 311.7));
-            p += dot(p, p + 19.19);
-            return fract(p.x * p.y);
-          }
-          float noise(vec2 p) {
-            vec2 i = floor(p);
-            vec2 f = fract(p);
-            vec2 u = f * f * (3.0 - 2.0 * f);
-            return mix(
-              mix(hash(i), hash(i + vec2(1,0)), u.x),
-              mix(hash(i + vec2(0,1)), hash(i + vec2(1,1)), u.x),
-              u.y
-            );
-          }
-          float fbm(vec2 p) {
-            float v = 0.0; float a = 0.5;
-            for (int i = 0; i < 5; i++) {
-              v += a * noise(p);
-              p = p * 2.1 + vec2(1.7, 9.2);
-              a *= 0.5;
-            }
-            return v;
-          }
-
-          void main() {
-            vec3 dir = normalize(vWorldDir);
-            float t = clamp(dir.y * 0.5 + 0.5, 0.0, 1.0);
-            t = pow(t, uGradientPow);
-            float mask = smoothstep(uEdge0, uEdge1, t);
-            vec3 skyColor = mix(uBottomColor, uTopColor, mask);
-
-            float cloudMask = 0.0;
-            if (dir.y > 0.0) {
-              vec2 uv = dir.xz / (dir.y + 0.1) * uCloudScale;
-              uv.x += uTime * uCloudSpeed;
-              float n = fbm(uv) * 0.6 + 0.4 * fbm(uv * 2.0 + 3.7);
-              float horizon = smoothstep(0.0, 0.25, dir.y);
-              cloudMask = smoothstep(1.0 - uCloudCoverage, 1.0 - uCloudCoverage + 0.3, n) * horizon;
-            }
-
-            vec3 color = mix(skyColor, uCloudColor, cloudMask * uCloudDensity * uShowCloud);
-            gl_FragColor = vec4(color, 1.0);
-          }
-        `
+        vertexShader: skyDomeVert,
+        fragmentShader: skyDomeFrag
       })
     )
     scene.add(skyDome)
@@ -138,11 +79,6 @@ const Playground = () => {
     const loader = new THREE.TextureLoader()
 
     const clickableSprites: ClickableSprite[] = []
-    let hoveredSpriteMesh: THREE.Mesh | null = null
-
-    const raycaster = new THREE.Raycaster()
-    const pointerNDC = new THREE.Vector2()
-
     const addUISprite = createUISpriteAdder(scene, clickableSprites)
 
     preloadMaterials(
@@ -150,8 +86,6 @@ const Playground = () => {
       loader,
       (loaded, total) => console.log(`Loading: ${loaded}/${total}`)
     ).then((mats) => {
-      // mats['banner'] / mats['startBtn'] 等都是 MeshBasicMaterial，直接传给 addUISprite
-
       console.log('mats', mats)
 
       const cx = 1920 / 2
@@ -372,69 +306,22 @@ const Playground = () => {
         barrel: { value: 0.3 },
         barrelCenter: { value: new THREE.Vector2(0.5, 0.5) }
       },
-      vertexShader: /* glsl */ `
-        varying vec2 vUv;
-        void main() {
-          vUv = uv;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: /* glsl */ `
-        uniform sampler2D tDiffuse;
-        uniform float maskRX;
-        uniform float maskRY;
-        uniform float maskN;
-        uniform float maskSoft;
-        uniform vec3 maskColor;
-        uniform float barrel;
-        uniform vec2 barrelCenter;
-        varying vec2 vUv;
-
-        vec2 distort(vec2 uv, float k) {
-          // scale: 整体缩小采样范围，防止畸变后边角超出 0~1 导致拉伸
-          // k 越大缩得越小，刚好让边角畸变后落在边界内
-          float scale = 1.0 + k * 0.5;
-
-          // d: 从畸变中心 → 当前像素的偏移向量
-          // 除以 scale 是把坐标整体往中心收一点
-          // 例如 uv=(0.8,0.5), center=(0.5,0.5) → d=(0.3,0.0)/scale
-          vec2 d = (uv - barrelCenter) / scale;
-
-          // dist: 当前像素离中心的距离（标量）
-          // 越靠边缘 dist 越大
-          float dist = length(d);
-
-          // 拉伸 d 向量：离中心越远，d 被拉得越长
-          // (1.0 + k * dist) 是拉伸系数，dist=0 时系数=1不变，dist越大系数越大
-          // 最后加回 barrelCenter，得到畸变后的采样坐标
-          return barrelCenter + d * (1.0 + k * dist);
-        }
-
-        void main() {
-          // ── 超椭圆遮罩 ──
-          vec2 d = abs(vUv - vec2(0.5, 0.5)) / vec2(maskRX, maskRY);
-          float dist = pow(pow(d.x, maskN) + pow(d.y, maskN), 1.0 / maskN);
-          float mask = smoothstep(1.0 - maskSoft, 1.0, dist);
-
-          if (mask >= 1.0) {
-            gl_FragColor = vec4(maskColor, 1.0);
-            return;
-          }
-
-          // ── 桶形畸变 ──
-          vec2 uv = distort(vUv, barrel);
-          vec4 color = texture2D(tDiffuse, uv);
-          gl_FragColor = vec4(mix(color.rgb, maskColor, mask), 1.0);
-        }
-      `
+      vertexShader: barrelVert,
+      fragmentShader: barrelFrag
     }
 
+    // VR 遮罩和桶形畸变需要对整张画面做像素级处理，必须在场景渲染完后作为全屏后处理步骤执行。
+    // RenderPass 先把场景渲染到离屏纹理，ShaderPass 再把这张纹理作为输入做二次处理后输出到屏幕。
     const composer = new EffectComposer(renderer)
     composer.addPass(new RenderPass(scene, camera))
     const barrelPass = new ShaderPass(BarrelShader)
     composer.addPass(barrelPass)
 
     const noise3D = createNoise3D()
+    const allWaveFns: Record<string, ReturnType<typeof createNoiseFn>> = {
+      ...waveFns,
+      noise: createNoiseFn(noise3D)
+    }
 
     // ── dat.GUI ───────────────────────────────────────────
     const gui = new GUI()
@@ -490,52 +377,20 @@ const Playground = () => {
       .onComplete(() => {})
       .start()
 
-    addEventListener('mousemove', (e) => {
-      const [x, y] = [e.pageX, e.pageY]
-
-      if (params.lockCamera) return
-
-      const sx = x / innerWidth - 0.5
-      const sy = y / innerHeight - 0.5
-
-      camTarget.set(sx * 8, sy * -4, camTarget.z)
-
-      // hover cursor & 触发 onHover / onHoverOut 回调
-      pointerNDC.set((x / innerWidth) * 2 - 1, -(y / innerHeight) * 2 + 1)
-      raycaster.setFromCamera(pointerNDC, camera)
-      const hovered = raycaster.intersectObjects(clickableSprites.map((s) => s.mesh))
-      const newHovered = hovered.length > 0 ? (hovered[0].object as THREE.Mesh) : null
-
-      if (newHovered !== hoveredSpriteMesh) {
-        if (hoveredSpriteMesh) {
-          const prev = clickableSprites.find((s) => s.mesh === hoveredSpriteMesh)
-          prev?.onHoverOut?.(hoveredSpriteMesh)
-        }
-        if (newHovered) {
-          const next = clickableSprites.find((s) => s.mesh === newHovered)
-          next?.onHover?.(newHovered)
-        }
-        hoveredSpriteMesh = newHovered
-      }
-
-      renderer.domElement.style.cursor = hoveredSpriteMesh ? 'pointer' : ''
-    })
-
-    addEventListener('click', (e) => {
-      pointerNDC.set((e.pageX / innerWidth) * 2 - 1, -(e.pageY / innerHeight) * 2 + 1)
-      raycaster.setFromCamera(pointerNDC, camera)
-      const hits = raycaster.intersectObjects(clickableSprites.map((s) => s.mesh))
-      if (hits.length > 0) {
-        const hit = clickableSprites.find((s) => s.mesh === hits[0].object)
-        if (hit) hit.onClick?.(hit.mesh)
+    const { destroy: destroyPointer } = createPointerHandler({
+      camera,
+      domElement: renderer.domElement,
+      sprites: clickableSprites,
+      onMouseMove(e) {
+        if (params.lockCamera) return
+        const sx = e.pageX / innerWidth - 0.5
+        const sy = e.pageY / innerHeight - 0.5
+        camTarget.set(sx * 8, sy * -4, camTarget.z)
       }
     })
 
     // ── 动画循环 ──────────────────────────────────────────
     let rafId: number
-    let banner: THREE.Mesh | null = null
-    let icon1: THREE.Mesh | null = null
-    let icon2: THREE.Mesh | null = null
 
     function animate() {
       rafId = requestAnimationFrame(animate)
@@ -553,26 +408,7 @@ const Playground = () => {
         const waveFade = t01 * t01 * (3 - 2 * t01)
 
         if (waveFade === 0) continue
-        let n = 0
-        switch (params.waveType) {
-          case 'traveling':
-            n = Math.sin(t * 2 + v.x * 0.15)
-            break
-          case 'interfere':
-            n =
-              Math.sin(t * 2 + v.x * 0.1) * 0.6 + Math.sin(t * 1.3 + v.x * 0.05 + v.y * 0.08) * 0.4
-            break
-          case 'radial':
-            n = Math.sin(t * 1.5 - Math.sqrt(v.x * v.x + v.y * v.y) * 0.1)
-            break
-          case 'random':
-            n = Math.abs(Math.sin(t + v.phase))
-            break
-          case 'noise':
-            // n = (noise3D(v.x * 0.02, v.y * 0.02, t * 0.4) + 1) / 2
-            n = noise3D(v.x * 0.02, v.y * 0.02, t * 0.4)
-            break
-        }
+        const n = allWaveFns[params.waveType]?.(t, v) ?? 0
         v.z = v.initZ + n * v.amp * params.waveAmp * waveFade
       }
 
@@ -595,6 +431,7 @@ const Playground = () => {
     return () => {
       cancelAnimationFrame(rafId)
       window.removeEventListener('resize', onResize)
+      destroyPointer()
       gui.destroy()
       renderer.dispose()
       mount.removeChild(renderer.domElement)

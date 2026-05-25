@@ -109,6 +109,68 @@ export async function preloadMaterials<K extends string>(
   return Object.fromEntries(pairs) as Record<K, THREE.MeshBasicMaterial>
 }
 
+export type PointerHandlerOptions = {
+  camera: THREE.PerspectiveCamera
+  domElement: HTMLElement
+  sprites: ClickableSprite[]
+  /** 在指针事件处理完 hover/click 后额外执行的 mousemove 逻辑 */
+  onMouseMove?: (e: MouseEvent) => void
+}
+
+export function createPointerHandler({
+  camera,
+  domElement,
+  sprites,
+  onMouseMove
+}: PointerHandlerOptions) {
+  const raycaster = new THREE.Raycaster()
+  const pointerNDC = new THREE.Vector2()
+  let hoveredMesh: THREE.Mesh | null = null
+
+  function toNDC(pageX: number, pageY: number) {
+    pointerNDC.set((pageX / innerWidth) * 2 - 1, -(pageY / innerHeight) * 2 + 1)
+    raycaster.setFromCamera(pointerNDC, camera)
+  }
+
+  function findSprite(mesh: THREE.Mesh) {
+    return sprites.find((s) => s.mesh === mesh)
+  }
+
+  function handleMove(e: MouseEvent) {
+    toNDC(e.pageX, e.pageY)
+    const hits = raycaster.intersectObjects(sprites.map((s) => s.mesh))
+    const newHovered = hits.length > 0 ? (hits[0].object as THREE.Mesh) : null
+
+    if (newHovered !== hoveredMesh) {
+      if (hoveredMesh) findSprite(hoveredMesh)?.onHoverOut?.(hoveredMesh)
+      if (newHovered) findSprite(newHovered)?.onHover?.(newHovered)
+      hoveredMesh = newHovered
+    }
+
+    domElement.style.cursor = hoveredMesh ? 'pointer' : ''
+    onMouseMove?.(e)
+  }
+
+  function handleClick(e: MouseEvent) {
+    toNDC(e.pageX, e.pageY)
+    const hits = raycaster.intersectObjects(sprites.map((s) => s.mesh))
+    if (hits.length > 0) {
+      const hit = findSprite(hits[0].object as THREE.Mesh)
+      hit?.onClick?.(hit.mesh)
+    }
+  }
+
+  window.addEventListener('mousemove', handleMove)
+  window.addEventListener('click', handleClick)
+
+  return {
+    destroy() {
+      window.removeEventListener('mousemove', handleMove)
+      window.removeEventListener('click', handleClick)
+    }
+  }
+}
+
 export function createUISpriteAdder(scene: THREE.Scene, clickableSprites: ClickableSprite[]) {
   return function addUISprite(options: AddUISpriteOptions): THREE.Mesh {
     const { material, designW = 1920, itemW, left, top, z, onHover, onHoverOut, onClick } = options
