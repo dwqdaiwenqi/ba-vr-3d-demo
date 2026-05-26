@@ -10,7 +10,7 @@
     "build:font": "node cmd/pyftsubset-batch.js  --outDir=./src/assets/font",
     "eslint": "eslint --ext .js,.vue --ignore-path .gitignore --fix src",
     "prettier": "prettier --write",
-    "preview": "vite preview"
+    "preview": "vite preview --host"
   },
   "dependencies": {
     "@types/howler": "^2.2.12",

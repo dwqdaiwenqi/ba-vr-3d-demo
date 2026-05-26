@@ -211,6 +211,10 @@
       gtag('js', new Date())
       gtag('config', 'G-EXSE9ZVYTH')
     </script>
+
+    <%- injectVConsole %>
+    <%- injectGUI %>
+    <%- injectCrypto %>
    
   </head>
   <body attr-mode="">
@@ -308,9 +312,7 @@
   
     <div id="test-div" style="position: absolute;right:0;bottom:0;z-index: 10;width:40px;height:40px;"></div>
     <div id="app"></div>
-    <%- injectVConsole %>
-    <%- injectGUI %>
-    <%- injectCrypto %>
+   
     <script type="module" src="/src/main.tsx"></script>
 
     <style>

@@ -82,14 +82,7 @@ export default defineConfig(async ({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks: {
-            react: ['react', 'react-dom'],
-            pixi: [
-              'pixi.js',
-              '@pixi/sound',
-              '@pixi/filter-color-matrix',
-              '@pixi/ui',
-              '@pixi-spine/all-3.8'
-            ]
+            react: ['react', 'react-dom']
           }
         }
       }
