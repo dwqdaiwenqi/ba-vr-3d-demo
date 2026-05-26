@@ -42,7 +42,7 @@ const Playground = () => {
 
     const uiTw = new TWEEN.Group()
 
-    console.log('test22')
+    console.log('test22333')
     // 自定义天空盒：蓝粉渐变色 + fbm 噪声云朵
     const skyDome = new THREE.Mesh(
       new THREE.SphereGeometry(100, 32, 16),
