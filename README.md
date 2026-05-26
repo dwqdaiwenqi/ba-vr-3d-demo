@@ -1,92 +1,232 @@
-# ba-cn-drum-minigame
+# 官网落地页 VR 场景技术方案
 
-国服BA - 节奏天国小游戏
+## 一、背景与目标
 
-## Getting started
+官网落地页需要一个具有沉浸感的 3D 场景作为视觉入口，吸引用户进入游戏。
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+目标效果：模拟 VR 头显视野的动态 3D 场景，包含程序化天空、动态地面波浪、UI 元素与入场动画，整体营造"进入游戏世界"的沉浸感。
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+交付流程：开发实现 Playground Demo → 运营通过 dat.GUI 调整视觉参数确认效果 → 开发按确认参数落地正式页面并移除调试面板 → 上线。
 
-## Add your files
+---
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+## 二、技术选型
+threejs r160
+
+---
+## 三、模块设计
+
+### 3.1 场景分层结构
+
+![alt text](./01-scene-layers.png)
+
+场景由四层叠加构成，从远到近依次渲染：天空球 → 地面网格 → UI Sprite → 后处理
+
+### 3.2 SkyDome
+
+配合自定义着色器可以在运行时随意调整。
+
+![alt text](./06-sky-dome.png)
+
+SphereGeometry 关键处理：
+1. `side: BackSide`
+2. `depthTest: false`
+3. `pow + smoothstep`
+
+Sky 关键处理：
+1. `dir.xz / dir.y`
+2. 叠加5层噪声形成FBM
+3. 地平线渐隐
+4. UV偏移飘动
+
+### 3.3 Grid Wave
+
+> 图解：[diagrams/03-wave.excalidraw](diagrams/03-wave.excalidraw)
+
+![alt text](03-wave.png)
+
+#### 网格构建初始化
+
+初始化时调用一次，构建双层网格对象和共享顶点数组：
 
 ```
-cd existing_repo
-git remote add origin https://gitcn.yostar.net:8888/yostar/webdev/bluearchive/ba-cn-drum-minigame.git
-git branch -M main
-git push -uf origin main
+verts[]          ← 所有顶点的逻辑数据
+  x, y           固定不变（水平/纵深坐标）
+  initZ          sin(t×π) × curve，两端平、中间下凹的弯曲基准
+  z              当前帧高度，每帧由波浪函数覆盖写入
+  seed           Math.random() × 2π，随机种子，仅 random 波使用，偏移 sin 起点
+  amp            random(5~15)，随机振幅，各顶点幅度有差异
+
+segPairs[]       线段索引对，记录哪两个顶点构成一条网格线
+
+linesPosArr      Float32Array，线框层的 GPU 顶点缓冲
+fillPosArr       Float32Array，填充面层的 GPU 顶点缓冲
 ```
 
-## Integrate with your tools
+两个 Mesh 对象共享同一套 `verts[]` 逻辑数据：
 
-- [ ] [Set up project integrations](https://gitcn.yostar.net:8888/yostar/webdev/bluearchive/ba-cn-drum-minigame/-/settings/integrations)
+| 对象 | 类型 | 材质 | position.y 偏移 |
+|------|------|------|---------|
+| `gridLines` | `LineSegments` | `LineBasicMaterial` `#88b0d8` | `+0.1`（防 Z-fighting） |
+| `gridFill` | `Mesh` | `MeshBasicMaterial` `#dde8f8` | `0`（基准层） |
 
-## Collaborate with your team
+#### 每帧更新：updateGridLineBuffer / updateGridFillBuffer
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Automatically merge when pipeline succeeds](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+波浪动画在 CPU 侧修改 `verts[].z`，再分别写回两个 GPU 缓冲：
 
-## Test and Deploy
+```ts
+// 1. 计算每个顶点新的 z
+const t = performance.now() * 0.001 * params.waveSpeed
+for (let i = 0; i < verts.length; i++) {
+  const v = verts[i]
+  // Wave Fade：靠近相机端 = 0（静止），远端 = 1（全力起伏）
+  const raw = (v.x - params.waveFadeStart) / (params.waveFadeEnd - params.waveFadeStart)
+  const t01 = Math.max(0, Math.min(1, raw))
+  const waveFade = t01 * t01 * (3 - 2 * t01)   // smoothstep t²(3-2t)
 
-Use the built-in continuous integration in GitLab.
+  if (waveFade === 0) continue                  // 静止区直接跳过，节省计算
+  const n = allWaveFns[params.waveType]?.(t, v) ?? 0
+  v.z = v.initZ + n * v.amp * params.waveAmp * waveFade
+}
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing(SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+// 2. 写回线框层缓冲（每条线段两个端点 × xyz）
+updateGridLineBuffer()   // linesPosArr[s*6 .. s*6+5] ← verts[a/b].xyz
+                         // linesGeo.attributes.position.needsUpdate = true
 
-***
+// 3. 写回填充面缓冲（每个顶点 xyz）
+updateGridFillBuffer()   // fillPosArr[i*3 .. i*3+2] ← verts[i].xyz
+                         // fillGeo.attributes.position.needsUpdate = true
+```
 
-# Editing this README
+`waveFade === 0 continue` 是关键优化：靠相机的静止区顶点直接跳过波函数计算，降低 CPU 开销。
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!).  Thank you to [makeareadme.com](https://www.makeareadme.com/) for this template.
+#### Wave Fade 平滑过渡
 
-## Suggestions for a good README
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+smoothstep 公式 `t²(3-2t)` 在 `waveFadeStart → waveFadeEnd` 区间把 waveFade 从 0 平滑推到 1，边界处一阶导数为 0，无折角感，形成"近处静止、远处起伏"的纵深视觉。
 
-## Name
-Choose a self-explaining name for your project.
+#### 可选波形（运营选择后固化正式版）
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+| 波形 | 视觉效果 | 公式特征 |
+|------|----------|----------|
+| traveling | 整个平面像传送带朝一个方向推进 | `sin(t×2 + x×0.15)` |
+| interfere | 两列不同方向的波叠加，产生棋盘状驻波图样 | 两个 sin 函数加权叠加 |
+| radial | 从中心向外扩散，像水面投入石子 | `sin(t×1.5 - √(x²+y²)×0.1)` |
+| random | 每个顶点独立抖动，整体像颗粒感震动 | `|sin(t + phase)|` |
+| **noise** | **最自然的有机起伏，推荐正式版本使用** | Simplex Noise 3D |
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+---
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+### 3.5 后处理：VR 遮罩 + 桶形畸变
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+> 图解：[diagrams/02-vr-postprocess.excalidraw](diagrams/02-vr-postprocess.excalidraw)
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+**为什么需要后处理？** VR 遮罩要覆盖在整张画面最上层，桶形畸变要对整张画面重新采样——两者都是全屏像素级操作，无法附加在场景中的某个 mesh 上实现。必须在场景渲染完成后，把整张画面作为一张纹理再处理一次。
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+**超椭圆遮罩：** 公式 `pow(|dx|ⁿ + |dy|ⁿ, 1/n)` 在 n=2 时是标准椭圆，n 越大越接近矩形，n=5.5 得到 VR 头显镜片的方圆形边框。边界处用 smoothstep 羽化，`maskSoft` 参数控制羽化宽度，入场动画通过驱动此值产生"镜片聚焦"效果。
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+**桶形畸变：** 模拟 VR 凸透镜光学效果，中心膨胀、边缘压缩。对每个像素将 UV 坐标向边缘方向偏移，偏移量与离中心距离成正比（非线性），使中心区域采样范围扩大、边缘向外偏移。
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+每个像素的处理流程：计算 SDF dist → dist ≥ 1 直接填充白色返回 → dist < 1 做桶形畸变后采样场景纹理 → 边界处 smoothstep 羽化混合。
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+**可调参数：**
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+| 参数 | 含义 | 默认值 |
+|------|------|--------|
+| maskRX / maskRY | 遮罩横/纵轴半径 | `0.5` |
+| maskN | 超椭圆指数（圆角程度） | `5.5` |
+| maskSoft | 边缘羽化宽度 | `0.6` |
+| barrel | 畸变强度（>0 桶形，<0 枕形） | `0.3` |
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+---
 
-## License
-For open source projects, say how it is licensed.
+### 3.6 UI Sprite 系统
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+> 图解：[diagrams/05-ui-sprite-coords.excalidraw](diagrams/05-ui-sprite-coords.excalidraw)
+
+**核心问题：设计师给的是设计稿像素坐标，Three.js 需要 3D 世界坐标，怎么转换？**
+
+以 1920px 为基准宽度，将设计稿像素坐标经过响应式缩放 → 转为 NDC 归一化坐标 → 通过相机反投影发射射线 → 与指定深度的 z 平面求交，得到 3D 世界坐标。无论屏幕尺寸如何变化，元素视觉位置始终与设计稿对应。
+
+不同元素设置不同 `z` 值（Banner z=0，装饰星 z=-50、z=-150），透视投影自动产生近大远小的层次感，无需手动计算大小。
+
+hover/click 通过 Raycaster 射线检测实现，每次 mousemove 向场景发射一条射线，检测与哪个 Sprite 相交，精确触发 `onHover` / `onHoverOut` / `onClick` 回调，回调内用 TWEEN 驱动动画。
+
+---
+
+### 3.7 动画系统
+
+> 图解：[diagrams/04-entry-animation.excalidraw](diagrams/04-entry-animation.excalidraw)
+
+所有动画统一通过 `TWEEN.Group` 管理（而非全局 TWEEN），可对任意 JS 对象的数值属性做插值，包括 shader uniform、mesh.scale、material.opacity，销毁时精确清理不污染其他页面。
+
+**入场动画（两段串联）：**
+- `t=0ms`：相机从俯视（`rotation.x=1.2`）平滑转正（`=0`），时长 1300ms，Quadratic.Out（先快后慢，自然减速）
+- `t=1300ms`：VR 遮罩从 `maskSoft=0.6` 渐变到 `0`，时长 800ms，产生"镜片慢慢聚焦"效果
+- `t=2100ms`：入场完成
+
+**点击转场：**
+- delay 400ms（等待点击视觉反馈）后，Banner opacity `1→0`（300ms）
+- 同时 `maskSoft` `0→7`（1500ms），遮罩从中心向外扩张吞噬整个画面，产生"进入 VR 世界"的隧道感
+
+---
+
+## 五、正式落地工作量
+
+| 工作项 | 说明 | 估算 |
+|--------|------|------|
+| 按运营确认参数固化配置 | 将 dat.GUI 调试参数替换为硬编码默认值，移除调试面板 | 0.5 天 |
+| 替换正式 UI 素材 | Banner、按钮、装饰图等切图替换 | 0.5 天 |
+| 点击后的页面跳转逻辑 | onClick 回调接入路由/跳转 | 0.5 天 |
+| 响应式适配 | 窗口 resize 已处理，需确认移动端布局比例 | 1 天 |
+| 性能测试与优化 | 见风险章节 | 1～2 天 |
+| **合计** | | **3.5～4.5 天** |
+
+> 以上不含运营调参时间，调参结果确认后方可开始落地。
+
+---
+
+## 六、风险与降级方案
+
+### 风险 1：移动端性能
+
+**原因：** 地面网格每帧在 CPU 侧更新 10201 个顶点（101×101），移动端低端机可能帧率不足。
+
+**应对（按优先级）：**
+1. 降低网格分段数：`SEG_X/SEG_Y` 从 100 降至 50，顶点数减少至 1/4
+2. 将波浪计算迁移到顶点着色器（GPU），彻底消除 CPU 瓶颈
+3. 最终降级：移动端禁用波浪动画，地面静止展示
+
+### 风险 2：WebGL 不支持
+
+**应对：** 检测 WebGL 可用性，不可用时降级为静态图或视频背景。
+
+### 风险 3：运营调参超出视觉边界
+
+**应对：** dat.GUI 中对高风险参数（畸变强度、遮罩形状）设置数值范围上限，防止调出异常视觉效果。
+
+---
+
+## 七、参数确认清单（交运营）
+
+运营通过 Playground Demo 的 dat.GUI 面板调整以下参数并截图/录屏确认：
+
+**Sky 面板**
+- 顶部/底部颜色、渐变区间（edge0/edge1）、渐变曲线指数
+- 是否显示云朵、云量、云密度、云速度
+
+**Wave 面板**
+- 波形类型（traveling / interfere / radial / random / noise）
+- 波浪速度、幅度倍数、渐入起点/终点
+
+**Buffer 面板**
+- 地面弯曲程度、地面 Z/Y 位置
+
+**VR 面板**
+- 遮罩横纵轴、圆角程度、边缘羽化、畸变强度
+
+**Camera 面板**
+- 俯仰角、视差偏移范围
+
+**UI 素材（需设计提供）**
+- Banner、按钮、装饰星等切图（PNG 透明底）
+- 各元素在 1920px 设计稿中的坐标和尺寸

@@ -42,7 +42,6 @@ const Playground = () => {
 
     const uiTw = new TWEEN.Group()
 
-    console.log('test22333')
     // 自定义天空盒：蓝粉渐变色 + fbm 噪声云朵
     const skyDome = new THREE.Mesh(
       new THREE.SphereGeometry(100, 32, 16),
@@ -122,19 +121,13 @@ const Playground = () => {
             .to({ r: 1.0, g: 1.0, b: 1.0 }, 150)
             .start()
         },
-        onClick: (startBtn) => {
+        onClick: () => {
           new TWEEN.Tween({ t: 1 }, uiTw)
             .to({ t: 0 }, 300)
             .delay(400)
             .easing(TWEEN.Easing.Quadratic.InOut)
             .onUpdate((v) => {
               banner.material.opacity = v.t
-            })
-            .onComplete(() => {
-              scene.remove(banner)
-              scene.remove(startBtn)
-              const idx = clickableSprites.findIndex((s) => s.mesh === startBtn)
-              if (idx !== -1) clickableSprites.splice(idx, 1)
             })
             .start()
 
@@ -143,9 +136,6 @@ const Playground = () => {
             .easing(TWEEN.Easing.Quadratic.InOut)
             .onUpdate((v) => {
               barrelPass.uniforms.maskSoft.value = v.t
-            })
-            .onComplete(() => {
-              stage2FadeEffect()
             })
             .start()
         }
@@ -188,18 +178,6 @@ const Playground = () => {
       star4.rotation.z = 180
     })
 
-    const stage2FadeEffect = async () => {
-      // new TWEEN.Tween({ t: 7 }, uiTw)
-      //   .to({ t: 0 }, 2000)
-      //   .delay(200)
-      //   .easing(TWEEN.Easing.Quadratic.InOut)
-      //   .onUpdate((v) => {
-      //     barrelPass.uniforms.maskSoft.value = v.t
-      //   })
-      //   .onComplete(() => {})
-      //   .start()
-    }
-
     const SEG_X = 100
     const SEG_Y = 100
     const SIZE = 400
@@ -211,7 +189,7 @@ const Playground = () => {
 
     // ── 地面网格（线框 + 填充面）────────────────────────────
     function createFloorGrid(curve: number) {
-      type Vert = { x: number; y: number; z: number; initZ: number; phase: number; amp: number }
+      type Vert = { x: number; y: number; z: number; initZ: number; seed: number; amp: number }
       const verts: Vert[] = []
       const segPairs: [number, number][] = []
 
@@ -227,7 +205,7 @@ const Playground = () => {
             y,
             z: initZ,
             initZ,
-            phase: Math.random() * Math.PI * 2,
+            seed: Math.random() * Math.PI * 2,
             amp: Math.random() * 10 + 5
           })
           const i = row * COLS + col
@@ -236,7 +214,7 @@ const Playground = () => {
         }
       }
 
-      // 线框层：网格线，比填充面稍微高一点避免 z-fighting
+      // 线框层：网格线，填充面用 polygonOffset 后移深度，避免 z-fighting
       const linesPosArr = new Float32Array(segPairs.length * 6)
       const linesGeo = new THREE.BufferGeometry()
       linesGeo.setAttribute('position', new THREE.BufferAttribute(linesPosArr, 3))
@@ -270,7 +248,10 @@ const Playground = () => {
           transparent: true,
           opacity: 1,
           side: THREE.DoubleSide,
-          fog: true
+          fog: true,
+          polygonOffset: true,
+          polygonOffsetFactor: 1,
+          polygonOffsetUnits: 1
         })
       )
       gridFill.rotation.x = -Math.PI / 2
@@ -359,7 +340,7 @@ const Playground = () => {
       fillGeo
     }
 
-    const { params, setShowCloud } = setupGUI({
+    const { params } = setupGUI({
       gui,
       barrelPass,
       camera,
@@ -386,21 +367,6 @@ const Playground = () => {
       .easing(TWEEN.Easing.Quadratic.Out)
       .onUpdate((obj: { rx: number }) => {
         camera.rotation.x = obj.rx
-      })
-
-      .onComplete(() => {
-        new TWEEN.Tween({ density: 0.7 }, uiTw)
-          .to({ density: 0 }, 1500)
-          .delay(1500)
-          .easing(TWEEN.Easing.Quadratic.Out)
-          .onUpdate((obj) => {
-            skyDomeUni.uCloudDensity.value = obj.density
-          })
-          .onComplete(() => {
-            skyDomeUni.uCloudDensity.value = 0.7
-            setShowCloud(false)
-          })
-          .start()
       })
       .start()
 

@@ -85,7 +85,7 @@ export const defaultSkyDomeParams: SkyDomeParams = {
 export type FloorGridRef = {
   gridLines: THREE.LineSegments
   gridFill: THREE.Mesh
-  verts: { x: number; y: number; z: number; initZ: number; phase: number; amp: number }[]
+  verts: { x: number; y: number; z: number; initZ: number; seed: number; amp: number }[]
   segPairs: [number, number][]
   linesPosArr: Float32Array
   linesGeo: THREE.BufferGeometry
@@ -131,7 +131,7 @@ export function setupGUI(deps: SetupGUIDeps): {
   const skyDomeParams: SkyDomeParams = { ...defaultSkyDomeParams }
 
   // 初始化应用默认值
-  floorRef.gridLines.position.y = params.planeY + 0.1
+  floorRef.gridLines.position.y = params.planeY
   floorRef.gridLines.position.z = params.planeZ
   floorRef.gridFill.position.y = params.planeY
   floorRef.gridFill.position.z = params.planeZ
@@ -216,7 +216,7 @@ export function setupGUI(deps: SetupGUIDeps): {
       removeFloorGrid(floorRef.gridLines, floorRef.gridFill)
       const result = createFloorGrid(planeCurveRef.value)
       onFloorRebuild(result)
-      result.gridLines.position.y = params.planeY + 0.1
+      result.gridLines.position.y = params.planeY
       result.gridLines.position.z = params.planeZ
       result.gridFill.position.y = params.planeY
       result.gridFill.position.z = params.planeZ
@@ -227,7 +227,7 @@ export function setupGUI(deps: SetupGUIDeps): {
     floorRef.gridFill.position.z = v
   })
   planeFolder.add(params, 'planeY', -100, 100, 1).onChange((v: number) => {
-    floorRef.gridLines.position.y = v + 0.1
+    floorRef.gridLines.position.y = v
     floorRef.gridFill.position.y = v
   })
   planeFolder.close()

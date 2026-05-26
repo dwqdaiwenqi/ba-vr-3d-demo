@@ -1,14 +1,14 @@
 {
   "type": "excalidraw",
   "version": 2,
-  "source": "https://excalidraw.com",
+  "source": "https://marketplace.visualstudio.com/items?itemName=pomdtr.excalidraw-editor",
   "elements": [
     {
       "id": "title_02",
       "type": "text",
-      "x": 250,
+      "x": 379.05201721191406,
       "y": 20,
-      "width": 700,
+      "width": 441.8959655761719,
       "height": 36,
       "angle": 0,
       "strokeColor": "#1e1e1e",
@@ -22,21 +22,24 @@
       "frameId": null,
       "roundness": null,
       "seed": 201001,
-      "version": 1,
-      "versionNonce": 201001,
+      "version": 8,
+      "versionNonce": 1756863616,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780316003,
       "link": null,
       "locked": false,
-      "text": "VR后处理：超椭圆遮罩 + 桶形畸变",
+      "text": "VR后处理：超椭圆SDF + 桶形畸变",
       "fontSize": 28,
       "fontFamily": 1,
       "textAlign": "center",
       "verticalAlign": "top",
       "baseline": 25,
       "containerId": null,
-      "originalText": "VR后处理：超椭圆遮罩 + 桶形畸变"
+      "originalText": "VR后处理：超椭圆SDF + 桶形畸变",
+      "index": "a0",
+      "autoResize": true,
+      "lineHeight": 1.2857142857142858
     },
     {
       "id": "left_section_label",
@@ -57,11 +60,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 201002,
-      "version": 1,
-      "versionNonce": 201002,
+      "version": 2,
+      "versionNonce": 1089387648,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
       "text": "超椭圆遮罩 SDF",
@@ -71,7 +74,10 @@
       "verticalAlign": "top",
       "baseline": 18,
       "containerId": null,
-      "originalText": "超椭圆遮罩 SDF"
+      "originalText": "超椭圆遮罩 SDF",
+      "index": "a1",
+      "autoResize": true,
+      "lineHeight": 1.4
     },
     {
       "id": "n2_ellipse",
@@ -92,13 +98,14 @@
       "frameId": null,
       "roundness": null,
       "seed": 201010,
-      "version": 1,
-      "versionNonce": 201010,
+      "version": 2,
+      "versionNonce": 399068032,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "a2"
     },
     {
       "id": "n2_label",
@@ -119,11 +126,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 201011,
-      "version": 1,
-      "versionNonce": 201011,
+      "version": 2,
+      "versionNonce": 484650112,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
       "text": "n = 2 (椭圆)",
@@ -133,7 +140,10 @@
       "verticalAlign": "top",
       "baseline": 14,
       "containerId": null,
-      "originalText": "n = 2 (椭圆)"
+      "originalText": "n = 2 (椭圆)",
+      "index": "a3",
+      "autoResize": true,
+      "lineHeight": 1.3846153846153846
     },
     {
       "id": "n55_rect",
@@ -152,16 +162,19 @@
       "opacity": 100,
       "groupIds": [],
       "frameId": null,
-      "roundness": null,
+      "roundness": {
+        "type": 3,
+        "value": 20
+      },
       "seed": 201020,
-      "version": 1,
-      "versionNonce": 201020,
+      "version": 2,
+      "versionNonce": 2006178688,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
-      "roundness": {"type": 3, "value": 20}
+      "index": "a4"
     },
     {
       "id": "n55_label",
@@ -182,11 +195,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 201021,
-      "version": 1,
-      "versionNonce": 201021,
+      "version": 2,
+      "versionNonce": 1623825536,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
       "text": "n = 5.5 (圆角矩形)",
@@ -196,7 +209,10 @@
       "verticalAlign": "top",
       "baseline": 14,
       "containerId": null,
-      "originalText": "n = 5.5 (圆角矩形)"
+      "originalText": "n = 5.5 (圆角矩形)",
+      "index": "a5",
+      "autoResize": true,
+      "lineHeight": 1.3846153846153846
     },
     {
       "id": "ninf_rect",
@@ -217,13 +233,14 @@
       "frameId": null,
       "roundness": null,
       "seed": 201030,
-      "version": 1,
-      "versionNonce": 201030,
+      "version": 2,
+      "versionNonce": 529296256,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "a6"
     },
     {
       "id": "ninf_label",
@@ -244,11 +261,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 201031,
-      "version": 1,
-      "versionNonce": 201031,
+      "version": 2,
+      "versionNonce": 1046613120,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
       "text": "n = ∞ (矩形)",
@@ -258,7 +275,10 @@
       "verticalAlign": "top",
       "baseline": 14,
       "containerId": null,
-      "originalText": "n = ∞ (矩形)"
+      "originalText": "n = ∞ (矩形)",
+      "index": "a7",
+      "autoResize": true,
+      "lineHeight": 1.3846153846153846
     },
     {
       "id": "sdf_formula",
@@ -279,11 +299,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 201040,
-      "version": 1,
-      "versionNonce": 201040,
+      "version": 2,
+      "versionNonce": 1509096320,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
       "text": "pow(|dx|ⁿ + |dy|ⁿ, 1/n) < 1 → 遮罩内（显示场景）\n                           > 1 → 遮罩外（填充白色）",
@@ -293,7 +313,10 @@
       "verticalAlign": "top",
       "baseline": 14,
       "containerId": null,
-      "originalText": "pow(|dx|ⁿ + |dy|ⁿ, 1/n) < 1 → 遮罩内（显示场景）\n                           > 1 → 遮罩外（填充白色）"
+      "originalText": "pow(|dx|ⁿ + |dy|ⁿ, 1/n) < 1 → 遮罩内（显示场景）\n                           > 1 → 遮罩外（填充白色）",
+      "index": "a8",
+      "autoResize": true,
+      "lineHeight": 1.5384615384615385
     },
     {
       "id": "smoothstep_bar_bg",
@@ -314,13 +337,14 @@
       "frameId": null,
       "roundness": null,
       "seed": 201041,
-      "version": 1,
-      "versionNonce": 201041,
+      "version": 2,
+      "versionNonce": 795638912,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "a9"
     },
     {
       "id": "smoothstep_label",
@@ -341,11 +365,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 201042,
-      "version": 1,
-      "versionNonce": 201042,
+      "version": 2,
+      "versionNonce": 688360320,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
       "text": "边缘 smoothstep 羽化 (0 → 1)",
@@ -355,7 +379,10 @@
       "verticalAlign": "top",
       "baseline": 14,
       "containerId": null,
-      "originalText": "边缘 smoothstep 羽化 (0 → 1)"
+      "originalText": "边缘 smoothstep 羽化 (0 → 1)",
+      "index": "aA",
+      "autoResize": true,
+      "lineHeight": 1.3846153846153846
     },
     {
       "id": "right_section_label",
@@ -376,11 +403,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 201050,
-      "version": 1,
-      "versionNonce": 201050,
+      "version": 2,
+      "versionNonce": 1974004864,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
       "text": "桶形畸变",
@@ -390,7 +417,10 @@
       "verticalAlign": "top",
       "baseline": 18,
       "containerId": null,
-      "originalText": "桶形畸变"
+      "originalText": "桶形畸变",
+      "index": "aB",
+      "autoResize": true,
+      "lineHeight": 1.4
     },
     {
       "id": "grid_orig_label",
@@ -411,11 +441,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 201051,
-      "version": 1,
-      "versionNonce": 201051,
+      "version": 2,
+      "versionNonce": 1191844736,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
       "text": "原始 UV",
@@ -425,34 +455,397 @@
       "verticalAlign": "top",
       "baseline": 14,
       "containerId": null,
-      "originalText": "原始 UV"
+      "originalText": "原始 UV",
+      "index": "aC",
+      "autoResize": true,
+      "lineHeight": 1.3846153846153846
     },
     {
-      "id": "grid_h1", "type": "line", "x": 660, "y": 130, "width": 100, "height": 0, "angle": 0, "strokeColor": "#868e96", "backgroundColor": "transparent", "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid", "roughness": 1, "opacity": 100, "groupIds": [], "frameId": null, "roundness": null, "seed": 211001, "version": 1, "versionNonce": 211001, "isDeleted": false, "boundElements": null, "updated": 1, "link": null, "locked": false, "points": [[0,0],[100,0]], "lastCommittedPoint": null, "startBinding": null, "endBinding": null, "startArrowhead": null, "endArrowhead": null
+      "id": "grid_h1",
+      "type": "line",
+      "x": 660,
+      "y": 130,
+      "width": 100,
+      "height": 0,
+      "angle": 0,
+      "strokeColor": "#868e96",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "roundness": null,
+      "seed": 211001,
+      "version": 2,
+      "versionNonce": 450321536,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1779780308100,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          100,
+          0
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": null,
+      "endBinding": null,
+      "startArrowhead": null,
+      "endArrowhead": null,
+      "index": "aD"
     },
     {
-      "id": "grid_h2", "type": "line", "x": 660, "y": 155, "width": 100, "height": 0, "angle": 0, "strokeColor": "#868e96", "backgroundColor": "transparent", "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid", "roughness": 1, "opacity": 100, "groupIds": [], "frameId": null, "roundness": null, "seed": 211002, "version": 1, "versionNonce": 211002, "isDeleted": false, "boundElements": null, "updated": 1, "link": null, "locked": false, "points": [[0,0],[100,0]], "lastCommittedPoint": null, "startBinding": null, "endBinding": null, "startArrowhead": null, "endArrowhead": null
+      "id": "grid_h2",
+      "type": "line",
+      "x": 660,
+      "y": 155,
+      "width": 100,
+      "height": 0,
+      "angle": 0,
+      "strokeColor": "#868e96",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "roundness": null,
+      "seed": 211002,
+      "version": 2,
+      "versionNonce": 641379200,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1779780308100,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          100,
+          0
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": null,
+      "endBinding": null,
+      "startArrowhead": null,
+      "endArrowhead": null,
+      "index": "aE"
     },
     {
-      "id": "grid_h3", "type": "line", "x": 660, "y": 180, "width": 100, "height": 0, "angle": 0, "strokeColor": "#868e96", "backgroundColor": "transparent", "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid", "roughness": 1, "opacity": 100, "groupIds": [], "frameId": null, "roundness": null, "seed": 211003, "version": 1, "versionNonce": 211003, "isDeleted": false, "boundElements": null, "updated": 1, "link": null, "locked": false, "points": [[0,0],[100,0]], "lastCommittedPoint": null, "startBinding": null, "endBinding": null, "startArrowhead": null, "endArrowhead": null
+      "id": "grid_h3",
+      "type": "line",
+      "x": 660,
+      "y": 180,
+      "width": 100,
+      "height": 0,
+      "angle": 0,
+      "strokeColor": "#868e96",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "roundness": null,
+      "seed": 211003,
+      "version": 2,
+      "versionNonce": 1891093632,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1779780308100,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          100,
+          0
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": null,
+      "endBinding": null,
+      "startArrowhead": null,
+      "endArrowhead": null,
+      "index": "aF"
     },
     {
-      "id": "grid_h4", "type": "line", "x": 660, "y": 205, "width": 100, "height": 0, "angle": 0, "strokeColor": "#868e96", "backgroundColor": "transparent", "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid", "roughness": 1, "opacity": 100, "groupIds": [], "frameId": null, "roundness": null, "seed": 211004, "version": 1, "versionNonce": 211004, "isDeleted": false, "boundElements": null, "updated": 1, "link": null, "locked": false, "points": [[0,0],[100,0]], "lastCommittedPoint": null, "startBinding": null, "endBinding": null, "startArrowhead": null, "endArrowhead": null
+      "id": "grid_h4",
+      "type": "line",
+      "x": 660,
+      "y": 205,
+      "width": 100,
+      "height": 0,
+      "angle": 0,
+      "strokeColor": "#868e96",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "roundness": null,
+      "seed": 211004,
+      "version": 2,
+      "versionNonce": 1893284736,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1779780308100,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          100,
+          0
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": null,
+      "endBinding": null,
+      "startArrowhead": null,
+      "endArrowhead": null,
+      "index": "aG"
     },
     {
-      "id": "grid_v1", "type": "line", "x": 660, "y": 130, "width": 0, "height": 75, "angle": 0, "strokeColor": "#868e96", "backgroundColor": "transparent", "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid", "roughness": 1, "opacity": 100, "groupIds": [], "frameId": null, "roundness": null, "seed": 211011, "version": 1, "versionNonce": 211011, "isDeleted": false, "boundElements": null, "updated": 1, "link": null, "locked": false, "points": [[0,0],[0,75]], "lastCommittedPoint": null, "startBinding": null, "endBinding": null, "startArrowhead": null, "endArrowhead": null
+      "id": "grid_v1",
+      "type": "line",
+      "x": 660,
+      "y": 130,
+      "width": 0,
+      "height": 75,
+      "angle": 0,
+      "strokeColor": "#868e96",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "roundness": null,
+      "seed": 211011,
+      "version": 2,
+      "versionNonce": 285883520,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1779780308100,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          75
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": null,
+      "endBinding": null,
+      "startArrowhead": null,
+      "endArrowhead": null,
+      "index": "aH"
     },
     {
-      "id": "grid_v2", "type": "line", "x": 685, "y": 130, "width": 0, "height": 75, "angle": 0, "strokeColor": "#868e96", "backgroundColor": "transparent", "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid", "roughness": 1, "opacity": 100, "groupIds": [], "frameId": null, "roundness": null, "seed": 211012, "version": 1, "versionNonce": 211012, "isDeleted": false, "boundElements": null, "updated": 1, "link": null, "locked": false, "points": [[0,0],[0,75]], "lastCommittedPoint": null, "startBinding": null, "endBinding": null, "startArrowhead": null, "endArrowhead": null
+      "id": "grid_v2",
+      "type": "line",
+      "x": 685,
+      "y": 130,
+      "width": 0,
+      "height": 75,
+      "angle": 0,
+      "strokeColor": "#868e96",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "roundness": null,
+      "seed": 211012,
+      "version": 2,
+      "versionNonce": 153471872,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1779780308100,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          75
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": null,
+      "endBinding": null,
+      "startArrowhead": null,
+      "endArrowhead": null,
+      "index": "aI"
     },
     {
-      "id": "grid_v3", "type": "line", "x": 710, "y": 130, "width": 0, "height": 75, "angle": 0, "strokeColor": "#868e96", "backgroundColor": "transparent", "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid", "roughness": 1, "opacity": 100, "groupIds": [], "frameId": null, "roundness": null, "seed": 211013, "version": 1, "versionNonce": 211013, "isDeleted": false, "boundElements": null, "updated": 1, "link": null, "locked": false, "points": [[0,0],[0,75]], "lastCommittedPoint": null, "startBinding": null, "endBinding": null, "startArrowhead": null, "endArrowhead": null
+      "id": "grid_v3",
+      "type": "line",
+      "x": 710,
+      "y": 130,
+      "width": 0,
+      "height": 75,
+      "angle": 0,
+      "strokeColor": "#868e96",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "roundness": null,
+      "seed": 211013,
+      "version": 2,
+      "versionNonce": 1569631360,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1779780308100,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          75
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": null,
+      "endBinding": null,
+      "startArrowhead": null,
+      "endArrowhead": null,
+      "index": "aJ"
     },
     {
-      "id": "grid_v4", "type": "line", "x": 735, "y": 130, "width": 0, "height": 75, "angle": 0, "strokeColor": "#868e96", "backgroundColor": "transparent", "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid", "roughness": 1, "opacity": 100, "groupIds": [], "frameId": null, "roundness": null, "seed": 211014, "version": 1, "versionNonce": 211014, "isDeleted": false, "boundElements": null, "updated": 1, "link": null, "locked": false, "points": [[0,0],[0,75]], "lastCommittedPoint": null, "startBinding": null, "endBinding": null, "startArrowhead": null, "endArrowhead": null
+      "id": "grid_v4",
+      "type": "line",
+      "x": 735,
+      "y": 130,
+      "width": 0,
+      "height": 75,
+      "angle": 0,
+      "strokeColor": "#868e96",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "roundness": null,
+      "seed": 211014,
+      "version": 2,
+      "versionNonce": 157309824,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1779780308100,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          75
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": null,
+      "endBinding": null,
+      "startArrowhead": null,
+      "endArrowhead": null,
+      "index": "aK"
     },
     {
-      "id": "grid_v5", "type": "line", "x": 760, "y": 130, "width": 0, "height": 75, "angle": 0, "strokeColor": "#868e96", "backgroundColor": "transparent", "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid", "roughness": 1, "opacity": 100, "groupIds": [], "frameId": null, "roundness": null, "seed": 211015, "version": 1, "versionNonce": 211015, "isDeleted": false, "boundElements": null, "updated": 1, "link": null, "locked": false, "points": [[0,0],[0,75]], "lastCommittedPoint": null, "startBinding": null, "endBinding": null, "startArrowhead": null, "endArrowhead": null
+      "id": "grid_v5",
+      "type": "line",
+      "x": 760,
+      "y": 130,
+      "width": 0,
+      "height": 75,
+      "angle": 0,
+      "strokeColor": "#868e96",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "roundness": null,
+      "seed": 211015,
+      "version": 2,
+      "versionNonce": 334976,
+      "isDeleted": false,
+      "boundElements": [],
+      "updated": 1779780308100,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          75
+        ]
+      ],
+      "lastCommittedPoint": null,
+      "startBinding": null,
+      "endBinding": null,
+      "startArrowhead": null,
+      "endArrowhead": null,
+      "index": "aL"
     },
     {
       "id": "barrel_arrow",
@@ -473,19 +866,29 @@
       "frameId": null,
       "roundness": null,
       "seed": 201060,
-      "version": 1,
-      "versionNonce": 201060,
+      "version": 2,
+      "versionNonce": 1137240960,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
-      "points": [[0, 0], [60, 0]],
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          60,
+          0
+        ]
+      ],
       "lastCommittedPoint": null,
       "startBinding": null,
       "endBinding": null,
       "startArrowhead": null,
-      "endArrowhead": "arrow"
+      "endArrowhead": "arrow",
+      "index": "aM"
     },
     {
       "id": "barrel_arrow_label",
@@ -506,11 +909,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 201061,
-      "version": 1,
-      "versionNonce": 201061,
+      "version": 2,
+      "versionNonce": 1781369984,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
       "text": "barrel=0.3",
@@ -520,7 +923,10 @@
       "verticalAlign": "top",
       "baseline": 14,
       "containerId": null,
-      "originalText": "barrel=0.3"
+      "originalText": "barrel=0.3",
+      "index": "aN",
+      "autoResize": true,
+      "lineHeight": 1.5
     },
     {
       "id": "distorted_grid_label",
@@ -541,11 +947,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 201062,
-      "version": 1,
-      "versionNonce": 201062,
+      "version": 2,
+      "versionNonce": 1117748096,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
       "text": "桶形畸变后",
@@ -555,7 +961,10 @@
       "verticalAlign": "top",
       "baseline": 14,
       "containerId": null,
-      "originalText": "桶形畸变后"
+      "originalText": "桶形畸变后",
+      "index": "aO",
+      "autoResize": true,
+      "lineHeight": 1.3846153846153846
     },
     {
       "id": "dgrid_outer",
@@ -576,13 +985,14 @@
       "frameId": null,
       "roundness": null,
       "seed": 201070,
-      "version": 1,
-      "versionNonce": 201070,
+      "version": 2,
+      "versionNonce": 1439169664,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "aP"
     },
     {
       "id": "dgrid_inner",
@@ -603,13 +1013,14 @@
       "frameId": null,
       "roundness": null,
       "seed": 201071,
-      "version": 1,
-      "versionNonce": 201071,
+      "version": 2,
+      "versionNonce": 1210321792,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "aQ"
     },
     {
       "id": "barrel_desc",
@@ -630,11 +1041,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 201072,
-      "version": 1,
-      "versionNonce": 201072,
+      "version": 2,
+      "versionNonce": 1150577792,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
       "text": "中心膨胀 边缘压缩\n模拟VR凸透镜",
@@ -644,7 +1055,10 @@
       "verticalAlign": "top",
       "baseline": 14,
       "containerId": null,
-      "originalText": "中心膨胀 边缘压缩\n模拟VR凸透镜"
+      "originalText": "中心膨胀 边缘压缩\n模拟VR凸透镜",
+      "index": "aR",
+      "autoResize": true,
+      "lineHeight": 1.6666666666666667
     },
     {
       "id": "flow_label",
@@ -665,11 +1079,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 201080,
-      "version": 1,
-      "versionNonce": 201080,
+      "version": 2,
+      "versionNonce": 1318493056,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
       "text": "像素处理流程",
@@ -679,7 +1093,10 @@
       "verticalAlign": "top",
       "baseline": 16,
       "containerId": null,
-      "originalText": "像素处理流程"
+      "originalText": "像素处理流程",
+      "index": "aS",
+      "autoResize": true,
+      "lineHeight": 1.3333333333333333
     },
     {
       "id": "flow_step1",
@@ -700,13 +1117,14 @@
       "frameId": null,
       "roundness": null,
       "seed": 201090,
-      "version": 1,
-      "versionNonce": 201090,
+      "version": 2,
+      "versionNonce": 5430400,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "aT"
     },
     {
       "id": "flow_step1_text",
@@ -727,11 +1145,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 201091,
-      "version": 1,
-      "versionNonce": 201091,
+      "version": 2,
+      "versionNonce": 137833344,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
       "text": "输入像素",
@@ -741,7 +1159,10 @@
       "verticalAlign": "top",
       "baseline": 14,
       "containerId": null,
-      "originalText": "输入像素"
+      "originalText": "输入像素",
+      "index": "aU",
+      "autoResize": true,
+      "lineHeight": 1.2857142857142858
     },
     {
       "id": "flow_arr1",
@@ -762,19 +1183,29 @@
       "frameId": null,
       "roundness": null,
       "seed": 201092,
-      "version": 1,
-      "versionNonce": 201092,
+      "version": 2,
+      "versionNonce": 449006720,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
-      "points": [[0,0],[35,0]],
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          35,
+          0
+        ]
+      ],
       "lastCommittedPoint": null,
       "startBinding": null,
       "endBinding": null,
       "startArrowhead": null,
-      "endArrowhead": "arrow"
+      "endArrowhead": "arrow",
+      "index": "aV"
     },
     {
       "id": "flow_step2",
@@ -795,13 +1226,14 @@
       "frameId": null,
       "roundness": null,
       "seed": 201100,
-      "version": 1,
-      "versionNonce": 201100,
+      "version": 2,
+      "versionNonce": 1598405504,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "aW"
     },
     {
       "id": "flow_step2_text",
@@ -822,11 +1254,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 201101,
-      "version": 1,
-      "versionNonce": 201101,
+      "version": 2,
+      "versionNonce": 1839578240,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
       "text": "计算SDF dist",
@@ -836,7 +1268,10 @@
       "verticalAlign": "top",
       "baseline": 14,
       "containerId": null,
-      "originalText": "计算SDF dist"
+      "originalText": "计算SDF dist",
+      "index": "aX",
+      "autoResize": true,
+      "lineHeight": 1.2857142857142858
     },
     {
       "id": "flow_arr2",
@@ -857,19 +1292,29 @@
       "frameId": null,
       "roundness": null,
       "seed": 201102,
-      "version": 1,
-      "versionNonce": 201102,
+      "version": 2,
+      "versionNonce": 1979861888,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
-      "points": [[0,0],[35,0]],
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          35,
+          0
+        ]
+      ],
       "lastCommittedPoint": null,
       "startBinding": null,
       "endBinding": null,
       "startArrowhead": null,
-      "endArrowhead": "arrow"
+      "endArrowhead": "arrow",
+      "index": "aY"
     },
     {
       "id": "flow_diamond",
@@ -890,13 +1335,14 @@
       "frameId": null,
       "roundness": null,
       "seed": 201110,
-      "version": 1,
-      "versionNonce": 201110,
+      "version": 2,
+      "versionNonce": 448408704,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "aZ"
     },
     {
       "id": "flow_diamond_text",
@@ -917,11 +1363,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 201111,
-      "version": 1,
-      "versionNonce": 201111,
+      "version": 2,
+      "versionNonce": 648862592,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
       "text": "dist ≥ 1?",
@@ -931,7 +1377,10 @@
       "verticalAlign": "top",
       "baseline": 14,
       "containerId": null,
-      "originalText": "dist ≥ 1?"
+      "originalText": "dist ≥ 1?",
+      "index": "aa",
+      "autoResize": true,
+      "lineHeight": 1.3846153846153846
     },
     {
       "id": "flow_yes_arrow",
@@ -939,7 +1388,7 @@
       "x": 380,
       "y": 383,
       "width": 0,
-      "height": -55,
+      "height": 55,
       "angle": 0,
       "strokeColor": "#e03131",
       "backgroundColor": "transparent",
@@ -952,19 +1401,29 @@
       "frameId": null,
       "roundness": null,
       "seed": 201112,
-      "version": 1,
-      "versionNonce": 201112,
+      "version": 2,
+      "versionNonce": 197172352,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
-      "points": [[0,0],[0,-55]],
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          -55
+        ]
+      ],
       "lastCommittedPoint": null,
       "startBinding": null,
       "endBinding": null,
       "startArrowhead": null,
-      "endArrowhead": "arrow"
+      "endArrowhead": "arrow",
+      "index": "ab"
     },
     {
       "id": "flow_yes_label",
@@ -985,11 +1444,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 201113,
-      "version": 1,
-      "versionNonce": 201113,
+      "version": 2,
+      "versionNonce": 59075456,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
       "text": "YES",
@@ -999,7 +1458,10 @@
       "verticalAlign": "top",
       "baseline": 14,
       "containerId": null,
-      "originalText": "YES"
+      "originalText": "YES",
+      "index": "ac",
+      "autoResize": true,
+      "lineHeight": 1.5
     },
     {
       "id": "flow_white_box",
@@ -1020,13 +1482,14 @@
       "frameId": null,
       "roundness": null,
       "seed": 201120,
-      "version": 1,
-      "versionNonce": 201120,
+      "version": 2,
+      "versionNonce": 1920535680,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "ad"
     },
     {
       "id": "flow_white_text",
@@ -1047,11 +1510,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 201121,
-      "version": 1,
-      "versionNonce": 201121,
+      "version": 2,
+      "versionNonce": 1456208768,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
       "text": "填充白色",
@@ -1061,7 +1524,10 @@
       "verticalAlign": "top",
       "baseline": 14,
       "containerId": null,
-      "originalText": "填充白色"
+      "originalText": "填充白色",
+      "index": "ae",
+      "autoResize": true,
+      "lineHeight": 1.3846153846153846
     },
     {
       "id": "flow_no_arrow",
@@ -1082,19 +1548,29 @@
       "frameId": null,
       "roundness": null,
       "seed": 201130,
-      "version": 1,
-      "versionNonce": 201130,
+      "version": 2,
+      "versionNonce": 1218673792,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
-      "points": [[0,0],[45,0]],
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          45,
+          0
+        ]
+      ],
       "lastCommittedPoint": null,
       "startBinding": null,
       "endBinding": null,
       "startArrowhead": null,
-      "endArrowhead": "arrow"
+      "endArrowhead": "arrow",
+      "index": "af"
     },
     {
       "id": "flow_no_label",
@@ -1115,11 +1591,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 201131,
-      "version": 1,
-      "versionNonce": 201131,
+      "version": 2,
+      "versionNonce": 583043968,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
       "text": "NO",
@@ -1129,7 +1605,10 @@
       "verticalAlign": "top",
       "baseline": 14,
       "containerId": null,
-      "originalText": "NO"
+      "originalText": "NO",
+      "index": "ag",
+      "autoResize": true,
+      "lineHeight": 1.5
     },
     {
       "id": "flow_barrel_box",
@@ -1150,13 +1629,14 @@
       "frameId": null,
       "roundness": null,
       "seed": 201140,
-      "version": 1,
-      "versionNonce": 201140,
+      "version": 2,
+      "versionNonce": 1342172288,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "ah"
     },
     {
       "id": "flow_barrel_text",
@@ -1177,11 +1657,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 201141,
-      "version": 1,
-      "versionNonce": 201141,
+      "version": 2,
+      "versionNonce": 564337536,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
       "text": "桶形畸变UV",
@@ -1191,7 +1671,10 @@
       "verticalAlign": "top",
       "baseline": 14,
       "containerId": null,
-      "originalText": "桶形畸变UV"
+      "originalText": "桶形畸变UV",
+      "index": "ai",
+      "autoResize": true,
+      "lineHeight": 1.2857142857142858
     },
     {
       "id": "flow_arr3",
@@ -1212,19 +1695,29 @@
       "frameId": null,
       "roundness": null,
       "seed": 201142,
-      "version": 1,
-      "versionNonce": 201142,
+      "version": 2,
+      "versionNonce": 307125376,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
-      "points": [[0,0],[35,0]],
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          35,
+          0
+        ]
+      ],
       "lastCommittedPoint": null,
       "startBinding": null,
       "endBinding": null,
       "startArrowhead": null,
-      "endArrowhead": "arrow"
+      "endArrowhead": "arrow",
+      "index": "aj"
     },
     {
       "id": "flow_sample_box",
@@ -1245,13 +1738,14 @@
       "frameId": null,
       "roundness": null,
       "seed": 201150,
-      "version": 1,
-      "versionNonce": 201150,
+      "version": 2,
+      "versionNonce": 1169402752,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "ak"
     },
     {
       "id": "flow_sample_text",
@@ -1272,11 +1766,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 201151,
-      "version": 1,
-      "versionNonce": 201151,
+      "version": 2,
+      "versionNonce": 1632554112,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
       "text": "采样场景纹理",
@@ -1286,7 +1780,10 @@
       "verticalAlign": "top",
       "baseline": 14,
       "containerId": null,
-      "originalText": "采样场景纹理"
+      "originalText": "采样场景纹理",
+      "index": "al",
+      "autoResize": true,
+      "lineHeight": 1.2857142857142858
     },
     {
       "id": "flow_arr4",
@@ -1307,19 +1804,29 @@
       "frameId": null,
       "roundness": null,
       "seed": 201152,
-      "version": 1,
-      "versionNonce": 201152,
+      "version": 2,
+      "versionNonce": 959593344,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
-      "points": [[0,0],[35,0]],
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          35,
+          0
+        ]
+      ],
       "lastCommittedPoint": null,
       "startBinding": null,
       "endBinding": null,
       "startArrowhead": null,
-      "endArrowhead": "arrow"
+      "endArrowhead": "arrow",
+      "index": "am"
     },
     {
       "id": "flow_feather_box",
@@ -1340,13 +1847,14 @@
       "frameId": null,
       "roundness": null,
       "seed": 201160,
-      "version": 1,
-      "versionNonce": 201160,
+      "version": 2,
+      "versionNonce": 1455504512,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "an"
     },
     {
       "id": "flow_feather_text",
@@ -1367,11 +1875,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 201161,
-      "version": 1,
-      "versionNonce": 201161,
+      "version": 2,
+      "versionNonce": 1583270784,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
       "text": "边缘羽化混合",
@@ -1381,7 +1889,10 @@
       "verticalAlign": "top",
       "baseline": 14,
       "containerId": null,
-      "originalText": "边缘羽化混合"
+      "originalText": "边缘羽化混合",
+      "index": "ao",
+      "autoResize": true,
+      "lineHeight": 1.2857142857142858
     },
     {
       "id": "flow_arr5",
@@ -1402,19 +1913,29 @@
       "frameId": null,
       "roundness": null,
       "seed": 201162,
-      "version": 1,
-      "versionNonce": 201162,
+      "version": 2,
+      "versionNonce": 1415949440,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
-      "points": [[0,0],[35,0]],
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          35,
+          0
+        ]
+      ],
       "lastCommittedPoint": null,
       "startBinding": null,
       "endBinding": null,
       "startArrowhead": null,
-      "endArrowhead": "arrow"
+      "endArrowhead": "arrow",
+      "index": "ap"
     },
     {
       "id": "flow_output_box",
@@ -1435,13 +1956,14 @@
       "frameId": null,
       "roundness": null,
       "seed": 201170,
-      "version": 1,
-      "versionNonce": 201170,
+      "version": 2,
+      "versionNonce": 1333353344,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "aq"
     },
     {
       "id": "flow_output_text",
@@ -1462,11 +1984,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 201171,
-      "version": 1,
-      "versionNonce": 201171,
+      "version": 2,
+      "versionNonce": 66854016,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1,
+      "boundElements": [],
+      "updated": 1779780308100,
       "link": null,
       "locked": false,
       "text": "输出",
@@ -1476,12 +1998,17 @@
       "verticalAlign": "top",
       "baseline": 14,
       "containerId": null,
-      "originalText": "输出"
+      "originalText": "输出",
+      "index": "ar",
+      "autoResize": true,
+      "lineHeight": 1.2857142857142858
     }
   ],
   "appState": {
-    "viewBackgroundColor": "#ffffff",
-    "gridSize": null
+    "gridSize": 20,
+    "gridStep": 5,
+    "gridModeEnabled": false,
+    "viewBackgroundColor": "#ffffff"
   },
   "files": {}
 }

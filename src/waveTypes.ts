@@ -1,7 +1,8 @@
 export type WaveVert = {
   x: number
   y: number
-  phase: number
+  /** 初始化时随机固定的每顶点种子值（仅 random 波使用） */
+  seed: number
 }
 
 export type WaveFn = (t: number, v: WaveVert) => number
@@ -17,8 +18,8 @@ export const waveFns: Record<string, WaveFn> = {
   // 径向波：从原点向外扩散的水波纹
   radial: (t, v) => Math.sin(t * 1.5 - Math.sqrt(v.x * v.x + v.y * v.y) * 0.1),
 
-  // 随机相位波：每个顶点有独立随机相位，形成抖动感
-  random: (t, v) => Math.abs(Math.sin(t + v.phase))
+  // 随机波：每个顶点用独立 seed 偏移相位，形成无规律抖动感
+  random: (t, v) => Math.abs(Math.sin(t + v.seed))
 }
 
 /**
