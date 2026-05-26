@@ -10,8 +10,8 @@ const root = ReactDOM.createRoot(container)
 root.render(
   <BrowserRouter>
     <Routes>
-      <Route path="/playground" element={<Playground />} />
-      <Route path="*" element={<App />} />
+      {/* <Route path="/playground" element={<Playground />} /> */}
+      <Route path="*" element={<Playground />} />
     </Routes>
   </BrowserRouter>
 )
