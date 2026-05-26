@@ -121,13 +121,19 @@ const Playground = () => {
             .to({ r: 1.0, g: 1.0, b: 1.0 }, 150)
             .start()
         },
-        onClick: () => {
+        onClick: (startBtn) => {
           new TWEEN.Tween({ t: 1 }, uiTw)
             .to({ t: 0 }, 300)
             .delay(400)
             .easing(TWEEN.Easing.Quadratic.InOut)
             .onUpdate((v) => {
               banner.material.opacity = v.t
+            })
+            .onComplete(() => {
+              scene.remove(banner)
+              scene.remove(startBtn)
+              const idx = clickableSprites.findIndex((s) => s.mesh === startBtn)
+              if (idx !== -1) clickableSprites.splice(idx, 1)
             })
             .start()
 
@@ -136,6 +142,9 @@ const Playground = () => {
             .easing(TWEEN.Easing.Quadratic.InOut)
             .onUpdate((v) => {
               barrelPass.uniforms.maskSoft.value = v.t
+            })
+            .onComplete(() => {
+              stage2FadeEffect()
             })
             .start()
         }
@@ -178,6 +187,18 @@ const Playground = () => {
       star4.rotation.z = 180
     })
 
+    const stage2FadeEffect = async () => {
+      // new TWEEN.Tween({ t: 7 }, uiTw)
+      //   .to({ t: 0 }, 2000)
+      //   .delay(200)
+      //   .easing(TWEEN.Easing.Quadratic.InOut)
+      //   .onUpdate((v) => {
+      //     barrelPass.uniforms.maskSoft.value = v.t
+      //   })
+      //   .onComplete(() => {})
+      //   .start()
+    }
+
     const SEG_X = 100
     const SEG_Y = 100
     const SIZE = 400
@@ -185,7 +206,7 @@ const Playground = () => {
     const ROWS = SEG_Y + 1
     const HALF = SIZE / 2
 
-    let planeCurve = -20
+    let planeCurve = -25
 
     // ── 地面网格（线框 + 填充面）────────────────────────────
     function createFloorGrid(curve: number) {
@@ -337,7 +358,7 @@ const Playground = () => {
       fillGeo
     }
 
-    const { params } = setupGUI({
+    const { params, setShowCloud } = setupGUI({
       gui,
       barrelPass,
       camera,
@@ -364,6 +385,21 @@ const Playground = () => {
       .easing(TWEEN.Easing.Quadratic.Out)
       .onUpdate((obj: { rx: number }) => {
         camera.rotation.x = obj.rx
+      })
+
+      .onComplete(() => {
+        new TWEEN.Tween({ density: 0.7 }, uiTw)
+          .to({ density: 0 }, 1500)
+          .delay(1500)
+          .easing(TWEEN.Easing.Quadratic.Out)
+          .onUpdate((obj) => {
+            skyDomeUni.uCloudDensity.value = obj.density
+          })
+          .onComplete(() => {
+            skyDomeUni.uCloudDensity.value = 0.7
+            setShowCloud(false)
+          })
+          .start()
       })
       .start()
 

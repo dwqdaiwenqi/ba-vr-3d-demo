@@ -11,80 +11,37 @@
 ---
 
 ## 二、技术选型
-
-| 方案 | 结论 | 原因 |
-|------|------|------|
-| **Three.js** | ✅ 采用 | 支持自定义 GLSL 着色器和后处理，是实现 VR 畸变、程序化天空的唯一可行路径 |
-| CSS 动画 / Lottie | ✗ | 无法实现 3D 透视、VR 畸变、动态地面 |
-| 视频背景 | ✗ | 不可交互，无法响应鼠标视差，文件体积大 |
-
-**依赖包：**
-
-```json
-{
-  "three": "^0.x",
-  "@tweenjs/tween.js": "^x",
-  "simplex-noise": "^x"
-}
-```
+threejs r160
 
 ---
+## 三、模块设计
 
-## 三、文件结构
+### 3.1 场景分层结构
 
-```
-src/
-├── Playground.tsx          # 场景入口：组装所有模块、动画循环、事件绑定
-├── uiSprite.ts             # UI Sprite 系统：坐标换算、预加载材质、创建 Mesh
-├── setupGUI.ts             # dat.GUI 调试面板：所有可调参数的面板定义
-├── waveTypes.ts            # 波浪函数：5 种波形的函数实现
-└── shaders/
-    ├── skyDome.vert.glsl   # 天空球顶点着色器
-    ├── skyDome.frag.glsl   # 天空球片元着色器（渐变 + FBM 云朵）
-    ├── barrel.vert.glsl    # 后处理顶点着色器（透传 UV）
-    └── barrel.frag.glsl    # 后处理片元着色器（VR 遮罩 + 桶形畸变）
-```
-
----
-
-## 四、模块设计
-
-### 4.1 整体场景结构
-
-> 图解：[diagrams/01-scene-layers.excalidraw](diagrams/01-scene-layers.excalidraw)
+![alt text](../01-scene-layers.png)
 
 场景由四层叠加构成，从远到近依次渲染：天空球 → 地面网格 → UI Sprite → 后处理（全屏覆盖）。
 
-每帧流程：`RenderPass` 将前三层渲染到离屏纹理，`ShaderPass` 读取该纹理做桶形畸变和遮罩处理后输出到屏幕。
+### 3.2 SkyDome
 
----
+配合自定义着色器可以在运行时随意调整颜色和云朵。
 
-### 4.2 天空球
+![alt text](../06-sky-dome.png)
 
-**为什么用球体而不是 CubeMap 或平面背景？**
+SphereGeometry 关键处理：
+1. `side: BackSide`
+2. `depthTest: false`
+3. `pow + smoothstep`
 
-球体配合自定义着色器可以在运行时随意调整颜色和云朵参数，无需提前制作贴图资源，运营可以实时调参预览效果。CubeMap 需要提前烘焙贴图，修改一次就要重新出图。
+Sky 关键处理：
+1. `dir.xz / dir.y`
+2. 叠加5层噪声形成FBM
+3. 地平线渐隐
+4. UV偏移飘动
 
-**渲染原理：** 半径 100 的球体，`side: BackSide` 只渲染内表面，相机始终在球心内部。`depthTest: false` 确保天空永远画在最后面，不遮挡场景物体。片元着色器根据每个像素对应的方向向量 `dir.y` 判断朝向：`dir.y` 越大越靠近天顶，用 `pow + smoothstep` 混合顶色和底色产生渐变。
+### 3.3 地面网格
 
-**FBM 云朵生成原理：** 云朵完全由算法生成，不依赖任何贴图，运行时零额外加载。将球面方向 `dir.xz / dir.y` 投影到平面 UV，叠加 5 层频率递增、振幅递减的值噪声（FBM），对噪声值做阈值化得到云朵形状，`smoothstep` 羽化边缘。UV 随时间偏移产生飘移动画。
-
-**可调参数：**
-
-| 参数 | 含义 | 默认值 |
-|------|------|--------|
-| 顶部/底部颜色 | 天顶色和地平线色 | `#EBF7FF` / `#F2F1FF` |
-| 渐变曲线指数 | >1 使过渡区偏上，地平线颜色更纯 | `2.0` |
-| 渐变区间 edge0/edge1 | smoothstep 的过渡范围 | `0.4` / `0.6` |
-| 云量 | 越大云越多 | `0.45` |
-| 云密度 | 云的最大不透明度 | `0.7` |
-| 云速度 | 横向飘移速度 | `0.015` |
-
----
-
-### 4.3 地面网格
-
-**为什么分线框层和填充层两个对象？**
+![alt text](../03-wave-fade.png)
 
 Three.js 的 `LineSegments` 只能画线，`Mesh` 只能画面。要同时呈现"有颜色的地面 + 上面的网格线"，必须用两个对象叠加。线框层的 `position.y` 比填充层高 0.1，防止两层共面时深度缓冲精度不足导致闪烁（z-fighting）。
 
@@ -100,7 +57,7 @@ Three.js 的 `LineSegments` 只能画线，`Mesh` 只能画面。要同时呈现
 
 ---
 
-### 4.4 波浪动画
+### 3.4 波浪动画
 
 提供 5 种波形，运营选择后固化到正式版本：
 
@@ -114,7 +71,7 @@ Three.js 的 `LineSegments` 只能画线，`Mesh` 只能画面。要同时呈现
 
 ---
 
-### 4.5 后处理：VR 遮罩 + 桶形畸变
+### 3.5 后处理：VR 遮罩 + 桶形畸变
 
 > 图解：[diagrams/02-vr-postprocess.excalidraw](diagrams/02-vr-postprocess.excalidraw)
 
@@ -137,7 +94,7 @@ Three.js 的 `LineSegments` 只能画线，`Mesh` 只能画面。要同时呈现
 
 ---
 
-### 4.6 UI Sprite 系统
+### 3.6 UI Sprite 系统
 
 > 图解：[diagrams/05-ui-sprite-coords.excalidraw](diagrams/05-ui-sprite-coords.excalidraw)
 
@@ -151,7 +108,7 @@ hover/click 通过 Raycaster 射线检测实现，每次 mousemove 向场景发�
 
 ---
 
-### 4.7 动画系统
+### 3.7 动画系统
 
 > 图解：[diagrams/04-entry-animation.excalidraw](diagrams/04-entry-animation.excalidraw)
 

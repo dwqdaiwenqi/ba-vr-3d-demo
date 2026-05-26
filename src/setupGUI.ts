@@ -109,7 +109,11 @@ export type SetupGUIDeps = {
 
 // ── setupGUI ──────────────────────────────────────────────
 
-export function setupGUI(deps: SetupGUIDeps): { params: Params; skyDomeParams: SkyDomeParams } {
+export function setupGUI(deps: SetupGUIDeps): {
+  params: Params
+  skyDomeParams: SkyDomeParams
+  setShowCloud: (v: boolean) => void
+} {
   const {
     gui,
     barrelPass,
@@ -314,7 +318,7 @@ export function setupGUI(deps: SetupGUIDeps): { params: Params; skyDomeParams: S
     .onChange((v: number) => {
       skyDomeUni.uEdge1.value = v
     })
-  skyDomeFolder
+  const showCloudCtrl = skyDomeFolder
     .add(skyDomeParams, 'showCloud')
     .name('显示云朵')
     .onChange((v: boolean) => {
@@ -329,5 +333,11 @@ export function setupGUI(deps: SetupGUIDeps): { params: Params; skyDomeParams: S
       if (v) camTarget.set(0, 0, camTarget.z)
     })
 
-  return { params, skyDomeParams }
+  function setShowCloud(v: boolean) {
+    skyDomeParams.showCloud = v
+    skyDomeUni.uShowCloud.value = v ? 1.0 : 0.0
+    showCloudCtrl.updateDisplay()
+  }
+
+  return { params, skyDomeParams, setShowCloud }
 }
