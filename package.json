@@ -7,6 +7,7 @@
     "build": "cross-env vite build --mode dev",
     "build:test": "cross-env vite build --mode test",
     "build:main": "cross-env vite build --mode main",
+    "build:github": "cross-env vite build --mode github",
     "build:font": "node cmd/pyftsubset-batch.js  --outDir=./src/assets/font",
     "eslint": "eslint --ext .js,.vue --ignore-path .gitignore --fix src",
     "prettier": "prettier --write",
