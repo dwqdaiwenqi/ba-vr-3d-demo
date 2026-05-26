@@ -41,7 +41,7 @@ export default defineConfig(async ({ mode }) => {
             `
               : /*html*/ `
               `,
-            injectGUI: /dev|test|staging/.test(mode)
+            injectGUI: /dev|test|staging|github/.test(mode)
               ? `<script async src="${env.VITE_ASSETS_BASE_URL || ''}/dat.gui.min.js"></script>`
               : '',
             injectCrypto: `<script async src="${env.VITE_ASSETS_BASE_URL || ''}/crypto-js.min.js"></script>`
