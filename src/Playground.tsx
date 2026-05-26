@@ -13,6 +13,7 @@ import {
 } from './uiSprite'
 import { setupGUI, type FloorGridRef } from './setupGUI'
 import { waveFns, createNoiseFn } from './waveTypes'
+import { smoothstep } from './helper/smoothstep'
 import skyDomeVert from './shaders/skyDome.vert.glsl?raw'
 import skyDomeFrag from './shaders/skyDome.frag.glsl?raw'
 import barrelVert from './shaders/barrel.vert.glsl?raw'
@@ -71,7 +72,7 @@ const Playground = () => {
 
     const camTarget = new THREE.Vector3(0, 0, 50)
 
-    const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 1000)
+    const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 1, 1000)
     camera.position.set(0, 0, camTarget.z)
     camera.lookAt(camera.position.clone().add(new THREE.Vector3(0, 0, -1)))
 
@@ -405,10 +406,7 @@ const Playground = () => {
       const t = performance.now() * 0.001 * params.waveSpeed
       for (let i = 0; i < verts.length; i++) {
         const v = verts[i]
-        // smoothstep 过渡：waveFadeStart~waveFadeEnd 区间内从 0 平滑到 1
-        const raw = (v.x - params.waveFadeStart) / (params.waveFadeEnd - params.waveFadeStart)
-        const t01 = Math.max(0, Math.min(1, raw))
-        const waveFade = t01 * t01 * (3 - 2 * t01)
+        const waveFade = smoothstep(params.waveFadeStart, params.waveFadeEnd, v.x)
 
         if (waveFade === 0) continue
         const n = allWaveFns[params.waveType]?.(t, v) ?? 0

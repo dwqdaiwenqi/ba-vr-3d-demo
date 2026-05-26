@@ -4,16 +4,11 @@
 
 官网落地页需要一个具有沉浸感的 3D 场景作为视觉入口，吸引用户进入游戏。
 
-目标效果：模拟 VR 头显视野的动态 3D 场景，包含程序化天空、动态地面波浪、UI 元素与入场动画，整体营造"进入游戏世界"的沉浸感。
-
-交付流程：开发实现 Playground Demo → 运营通过 dat.GUI 调整视觉参数确认效果 → 开发按确认参数落地正式页面并移除调试面板 → 上线。
-
----
+目标效果：模拟 VR 头显视野的动态 3D 场景，包含程序化天空、动态地面波浪、UI 元素与入场动画，整体营造"进入VR世界"的沉浸感。
 
 ## 二、技术选型
-threejs r160
+- `three.js r160 `
 
----
 ## 三、模块设计
 
 ### 3.1 场景分层结构
@@ -24,85 +19,150 @@ threejs r160
 
 ### 3.2 SkyDome
 
-配合自定义着色器可以在运行时随意调整。
-
 ![alt text](./06-sky-dome.png)
 
-SphereGeometry 关键处理：
-1. `side: BackSide`
-2. `depthTest: false`
-3. `pow + smoothstep`
+#### Mesh 构建
 
-Sky 关键处理：
-1. `dir.xz / dir.y`
-2. 叠加5层噪声形成FBM
-3. 地平线渐隐
-4. UV偏移飘动
+`SphereGeometry` + `ShaderMaterial`，从内侧观察球面模拟天空：
+
+```
+side: BackSide      法线朝内，相机在球心看向内壁
+depthTest: false    天空永远在最远处，不参与深度竞争
+depthWrite: false   不写入深度缓冲，避免遮挡场景物体
+```
+
+#### 天空渐变
+
+顶点着色器将世界空间方向传入 `vWorldDir`，片元着色器用 `dir.y` 判断当前像素仰角：
+
+```
+t    = clamp(dir.y × 0.5 + 0.5, 0, 1)   // 将 [-1,1] 映射到 [0,1]
+t    = pow(t, uGradientPow)               // 控制渐变曲线形状
+mask = smoothstep(uEdge0, uEdge1, t)      // 渐变区间
+色   = mix(uBottomColor, uTopColor, mask)
+```
+
+#### 云朵（FBM 噪声）
+
+用透视投影将方向向量 `dir.xz / dir.y` 展开为 2D 平面 UV，再叠加 5 层 noise 形成 FBM：
+
+```
+uv  = dir.xz / (dir.y + 0.1) × uCloudScale
+uv.x += uTime × uCloudSpeed               // UV 偏移驱动云朵飘动
+
+n   = fbm(uv) × 0.6 + fbm(uv×2 + 3.7) × 0.4   // 两频段 FBM 叠加
+horizon   = smoothstep(0, 0.25, dir.y)           // 地平线附近渐隐
+cloudMask = smoothstep(1-coverage, 1-coverage+0.3, n) × horizon
+```
+
+最终混合：`mix(skyColor, uCloudColor, cloudMask × uCloudDensity)`
+
+#### 可调 uniform
+
+| uniform | 含义 | 默认值 |
+|---------|------|--------|
+| `uTopColor` / `uBottomColor` | 天空顶部 / 底部颜色 | `#EBF7FF` / `#F2F1FF` |
+| `uEdge0` / `uEdge1` | 渐变区间起止 | `0.25` / `0.6` |
+| `uGradientPow` | 渐变曲线指数 | `1.8` |
+| `uCloudCoverage` | 云量 | `0.45` |
+| `uCloudDensity` | 云不透明度 | `0.7` |
+| `uCloudScale` | 云朵尺寸 | `2.5` |
+| `uCloudSpeed` | 云朵飘动速度 | `0.2` |
+| `uShowCloud` | 是否显示云朵 | `1.0` |
 
 ### 3.3 Grid Wave
-
-> 图解：[diagrams/03-wave.excalidraw](diagrams/03-wave.excalidraw)
 
 ![alt text](03-wave.png)
 
 #### 网格构建初始化
 
-初始化时调用一次，构建双层网格对象和共享顶点数组：
+初始化时调用一次，构建双层网格对象和共享顶点数组。
+
+**`verts[]`** — CPU 侧顶点逻辑数据，两层网格共享同一份：
+
+```ts
+type Vert = {
+  x: number      // 水平坐标，初始化后固定不变
+  y: number      // 纵深坐标，初始化后固定不变
+  initZ: number  // 弯曲基准高度：sin(t×π) × curve，两端平、中间下凹
+  z: number      // 当前帧高度 = initZ + 波浪偏移量，每帧覆盖写入
+  seed: number   // Math.random() × 2π，固定随机种子，仅 random 波使用，偏移 sin 起点
+  amp: number    // random(5~15)，每顶点随机振幅，让各顶点起伏幅度有差异
+}
+```
+
+**`segPairs[]`** — 线段索引对 `[indexA, indexB]`，记录哪两个顶点构成一条网格线，初始化时构建一次，之后只读。
+
+**`linesPosArr`** — `Float32Array`，线框层 GPU 缓冲，**非索引**，按线段展开存储：
 
 ```
-verts[]          ← 所有顶点的逻辑数据
-  x, y           固定不变（水平/纵深坐标）
-  initZ          sin(t×π) × curve，两端平、中间下凹的弯曲基准
-  z              当前帧高度，每帧由波浪函数覆盖写入
-  seed           Math.random() × 2π，随机种子，仅 random 波使用，偏移 sin 起点
-  amp            random(5~15)，随机振幅，各顶点幅度有差异
+长度 = segPairs.length × 6
+布局：[ A.x  A.y  A.z  B.x  B.y  B.z ] [ ... ] ...
+       ←────── 第0段 ──────→  ←─ 第1段 ─→
+访问：linesPosArr[s*6 + 0~2] = 端点A xyz
+      linesPosArr[s*6 + 3~5] = 端点B xyz
+```
 
-segPairs[]       线段索引对，记录哪两个顶点构成一条网格线
+**`fillPosArr`** — `Float32Array`，填充面层 GPU 缓冲，**有索引**，每顶点去重存储一份：
 
-linesPosArr      Float32Array，线框层的 GPU 顶点缓冲
-fillPosArr       Float32Array，填充面层的 GPU 顶点缓冲
+```
+长度 = verts.length × 3
+布局：[ v0.x  v0.y  v0.z  v1.x  v1.y  v1.z  ... ]
+       ←── 顶点0 ──→  ←── 顶点1 ──→
+访问：fillPosArr[i*3 + 0~2] = 顶点i xyz
+三角形拓扑由 setIndex(meshIndices) 固定，相邻格共享顶点不重复写，无需每帧更新
 ```
 
 两个 Mesh 对象共享同一套 `verts[]` 逻辑数据：
 
-| 对象 | 类型 | 材质 | position.y 偏移 |
+| 对象 | 类型 | 材质 | Z-fighting 处理 |
 |------|------|------|---------|
-| `gridLines` | `LineSegments` | `LineBasicMaterial` `#88b0d8` | `+0.1`（防 Z-fighting） |
-| `gridFill` | `Mesh` | `MeshBasicMaterial` `#dde8f8` | `0`（基准层） |
+| `gridLines` | `LineSegments` | `LineBasicMaterial` `#88b0d8` | 无需处理（线段不写深度面） |
+| `gridFill` | `Mesh` | `MeshBasicMaterial` `#dde8f8` | `polygonOffset: true` `factor/units: 1`（深度后移） |
 
-#### 每帧更新：updateGridLineBuffer / updateGridFillBuffer
+
+#### 顶点缓冲同步
 
 波浪动画在 CPU 侧修改 `verts[].z`，再分别写回两个 GPU 缓冲：
 
-```ts
-// 1. 计算每个顶点新的 z
-const t = performance.now() * 0.001 * params.waveSpeed
-for (let i = 0; i < verts.length; i++) {
-  const v = verts[i]
-  // Wave Fade：靠近相机端 = 0（静止），远端 = 1（全力起伏）
-  const raw = (v.x - params.waveFadeStart) / (params.waveFadeEnd - params.waveFadeStart)
-  const t01 = Math.max(0, Math.min(1, raw))
-  const waveFade = t01 * t01 * (3 - 2 * t01)   // smoothstep t²(3-2t)
-
-  if (waveFade === 0) continue                  // 静止区直接跳过，节省计算
-  const n = allWaveFns[params.waveType]?.(t, v) ?? 0
-  v.z = v.initZ + n * v.amp * params.waveAmp * waveFade
-}
-
-// 2. 写回线框层缓冲（每条线段两个端点 × xyz）
-updateGridLineBuffer()   // linesPosArr[s*6 .. s*6+5] ← verts[a/b].xyz
-                         // linesGeo.attributes.position.needsUpdate = true
-
-// 3. 写回填充面缓冲（每个顶点 xyz）
-updateGridFillBuffer()   // fillPosArr[i*3 .. i*3+2] ← verts[i].xyz
-                         // fillGeo.attributes.position.needsUpdate = true
+```
+每帧数据流：
+  verts[i].z = initZ + waveFn(t, v) × amp × waveAmp × waveFade
+                  ↓                            ↓
+            linesPosArr                   fillPosArr
+          （线框层，非索引）             （填充面层，有索引）
 ```
 
-`waveFade === 0 continue` 是关键优化：靠相机的静止区顶点直接跳过波函数计算，降低 CPU 开销。
+**写回 `linesPosArr`**（非索引，按线段展开，每段两端点各存一份）
+
+```
+写入：linesPosArr[s*6 + 0~2] = verts[segPairs[s][0]].xyz   ← 端点 A
+      linesPosArr[s*6 + 3~5] = verts[segPairs[s][1]].xyz   ← 端点 B
+```
+
+**写回 `fillPosArr`**（有索引，每顶点去重存一份，三角形拓扑固定无需每帧更新）
+
+```
+写入：fillPosArr[i*3 + 0~2] = verts[i].xyz
+```
 
 #### Wave Fade 平滑过渡
 
-smoothstep 公式 `t²(3-2t)` 在 `waveFadeStart → waveFadeEnd` 区间把 waveFade 从 0 平滑推到 1，边界处一阶导数为 0，无折角感，形成"近处静止、远处起伏"的纵深视觉。
+每帧对每个顶点计算新的 `z`：
+
+```
+v.z = v.initZ + waveFn(t, v) × v.amp × waveAmp × waveFade
+```
+
+`waveFade` 由 smoothstep 根据顶点的纵深位置 `v.x` 计算得出：
+
+```
+v.x:       waveFadeStart ──────────────── waveFadeEnd
+waveFade:       0        →  S型缓入缓出  →      1
+             （静止）                        （全力起伏）
+```
+
+waveFade = 0 的顶点直接跳过波形计算，节省 CPU 开销。
 
 #### 可选波形（运营选择后固化正式版）
 
@@ -111,122 +171,142 @@ smoothstep 公式 `t²(3-2t)` 在 `waveFadeStart → waveFadeEnd` 区间把 wave
 | traveling | 整个平面像传送带朝一个方向推进 | `sin(t×2 + x×0.15)` |
 | interfere | 两列不同方向的波叠加，产生棋盘状驻波图样 | 两个 sin 函数加权叠加 |
 | radial | 从中心向外扩散，像水面投入石子 | `sin(t×1.5 - √(x²+y²)×0.1)` |
-| random | 每个顶点独立抖动，整体像颗粒感震动 | `|sin(t + phase)|` |
+| random | 每个顶点独立抖动，整体像颗粒感震动 | `\|sin(t + seed)\|` |
 | **noise** | **最自然的有机起伏，推荐正式版本使用** | Simplex Noise 3D |
-
----
 
 ### 3.5 后处理：VR 遮罩 + 桶形畸变
 
-> 图解：[diagrams/02-vr-postprocess.excalidraw](diagrams/02-vr-postprocess.excalidraw)
+![alt text](02-vr-postprocess.png)
 
-**为什么需要后处理？** VR 遮罩要覆盖在整张画面最上层，桶形畸变要对整张画面重新采样——两者都是全屏像素级操作，无法附加在场景中的某个 mesh 上实现。必须在场景渲染完成后，把整张画面作为一张纹理再处理一次。
+VR 遮罩和桶形畸变都是全屏像素级操作，无法附加在场景中某个 mesh 上实现。需要在场景渲染完成后，把整张画面作为纹理再处理一次：
 
-**超椭圆遮罩：** 公式 `pow(|dx|ⁿ + |dy|ⁿ, 1/n)` 在 n=2 时是标准椭圆，n 越大越接近矩形，n=5.5 得到 VR 头显镜片的方圆形边框。边界处用 smoothstep 羽化，`maskSoft` 参数控制羽化宽度，入场动画通过驱动此值产生"镜片聚焦"效果。
+```
+RenderPass  →  场景渲染到离屏纹理 tDiffuse
+ShaderPass  →  读取 tDiffuse，做遮罩 + 畸变后输出到屏幕
+```
 
-**桶形畸变：** 模拟 VR 凸透镜光学效果，中心膨胀、边缘压缩。对每个像素将 UV 坐标向边缘方向偏移，偏移量与离中心距离成正比（非线性），使中心区域采样范围扩大、边缘向外偏移。
+#### 超椭圆遮罩
 
-每个像素的处理流程：计算 SDF dist → dist ≥ 1 直接填充白色返回 → dist < 1 做桶形畸变后采样场景纹理 → 边界处 smoothstep 羽化混合。
+用超椭圆 SDF 计算每个像素到遮罩边界的距离：
 
-**可调参数：**
+```
+d    = abs(uv - 0.5) / vec2(maskRX, maskRY)
+dist = pow(|d.x|ⁿ + |d.y|ⁿ, 1/n)          // n=2 标准椭圆，n 越大越方
+mask = smoothstep(1 - maskSoft, 1.0, dist)  // 边界羽化
+```
 
-| 参数 | 含义 | 默认值 |
-|------|------|--------|
-| maskRX / maskRY | 遮罩横/纵轴半径 | `0.5` |
-| maskN | 超椭圆指数（圆角程度） | `5.5` |
-| maskSoft | 边缘羽化宽度 | `0.6` |
-| barrel | 畸变强度（>0 桶形，<0 枕形） | `0.3` |
+`maskSoft` 控制羽化宽度：入场动画从 `0.6→0` 产生"镜片聚焦"效果，点击转场从 `0→7` 遮罩向外扩张吞噬画面。
+
+#### 桶形畸变
+
+模拟 VR 凸透镜效果，中心区域膨胀、边缘压缩：
+
+```
+d       = (uv - center) / scale              // 归一化偏移
+distUV  = center + d × (1 + k × length(d))  // k>0 桶形，k<0 枕形
+color   = texture2D(tDiffuse, distUV)        // 用畸变后的 UV 采样
+```
+
+#### 每像素处理流程
+
+```
+计算 dist（超椭圆 SDF）
+  │
+  ├─ dist ≥ 1  →  填充 maskColor，返回
+  │
+  └─ dist < 1  →  对 UV 做桶形畸变 → 采样 tDiffuse
+                   → smoothstep 羽化混合 maskColor
+```
+
+#### 可调 uniform
+
+| uniform | 含义 | 默认值 |
+|---------|------|--------|
+| `maskRX` / `maskRY` | 遮罩横 / 纵轴半径 | `0.5` |
+| `maskN` | 超椭圆指数（圆角程度） | `5.5` |
+| `maskSoft` | 边缘羽化宽度 | `0.6` |
+| `barrel` | 畸变强度（`>0` 桶形，`<0` 枕形） | `0.3` |
+| `barrelCenter` | 畸变中心点 | `(0.5, 0.5)` |
 
 ---
 
 ### 3.6 UI Sprite 系统
 
-> 图解：[diagrams/05-ui-sprite-coords.excalidraw](diagrams/05-ui-sprite-coords.excalidraw)
+![alt text](05-ui-sprite-coords.png)
 
-**核心问题：设计师给的是设计稿像素坐标，Three.js 需要 3D 世界坐标，怎么转换？**
+#### 设计稿坐标 → 3D 世界坐标
 
-以 1920px 为基准宽度，将设计稿像素坐标经过响应式缩放 → 转为 NDC 归一化坐标 → 通过相机反投影发射射线 → 与指定深度的 z 平面求交，得到 3D 世界坐标。无论屏幕尺寸如何变化，元素视觉位置始终与设计稿对应。
+设计师给的是 1920px 设计稿中的像素坐标，需要转换为 Three.js 世界坐标：
 
-不同元素设置不同 `z` 值（Banner z=0，装饰星 z=-50、z=-150），透视投影自动产生近大远小的层次感，无需手动计算大小。
+```
+设计稿像素坐标 (dsX, dsY)
+  │
+  ├─ 响应式缩放：scale = innerWidth / 1920
+  │
+  ├─ 转 NDC：ndcX = (dsX × scale / innerWidth) × 2 - 1
+  │           ndcY = -((dsY × scale / innerHeight) × 2 - 1)
+  │
+  ├─ 相机反投影：ndcPoint.unproject(camera)  →  射线方向 rayDir
+  │
+  └─ 与 z 平面求交：t = (z - camera.z) / rayDir.z
+                    worldX = camera.x + t × rayDir.x
+                    worldY = camera.y + t × rayDir.y
+```
 
-hover/click 通过 Raycaster 射线检测实现，每次 mousemove 向场景发射一条射线，检测与哪个 Sprite 相交，精确触发 `onHover` / `onHoverOut` / `onClick` 回调，回调内用 TWEEN 驱动动画。
+无论屏幕尺寸如何变化，元素视觉位置始终与设计稿对应。不同元素设置不同 `z` 值，透视投影自动产生近大远小的层次感。
 
----
+#### Mesh 构建
+
+每个 Sprite 是一个 `PlaneGeometry` + `MeshBasicMaterial`（透明贴图）：
+
+```
+w = worldX(left + itemW) - worldX(left)   // 由设计稿宽度反算世界宽度
+h = w / (img.width / img.height)          // 保持贴图宽高比
+position = (x0 + w/2, y0 - h/2, z)       // 左上角对齐设计稿坐标
+renderOrder = 999                         // 始终渲染在场景最上层
+```
+
+#### 交互：Raycaster
+
+每次 `mousemove` 向场景发射一条射线，检测命中的 Sprite：
+
+```
+mousemove → toNDC(e.pageX, e.pageY) → raycaster.intersectObjects
+  │
+  ├─ 命中变化  →  onHoverOut(旧) → onHover(新)
+  └─ click     →  onClick(命中mesh)
+```
+
+回调内用 TWEEN 驱动缩放、透明度等动画。
 
 ### 3.7 动画系统
 
-> 图解：[diagrams/04-entry-animation.excalidraw](diagrams/04-entry-animation.excalidraw)
+#### 入场动画
 
-所有动画统一通过 `TWEEN.Group` 管理（而非全局 TWEEN），可对任意 JS 对象的数值属性做插值，包括 shader uniform、mesh.scale、material.opacity，销毁时精确清理不污染其他页面。
+页面加载后自动播放，两段串联：
 
-**入场动画（两段串联）：**
-- `t=0ms`：相机从俯视（`rotation.x=1.2`）平滑转正（`=0`），时长 1300ms，Quadratic.Out（先快后慢，自然减速）
-- `t=1300ms`：VR 遮罩从 `maskSoft=0.6` 渐变到 `0`，时长 800ms，产生"镜片慢慢聚焦"效果
-- `t=2100ms`：入场完成
+```
+t=0ms    相机 rotation.x: 1.2 → 0，时长 1300ms，Quadratic.Out
+                                    （俯视视角平滑转正）
+t=1300ms maskSoft: 0.6 → 0，时长 800ms，Quadratic.InOut
+                                    （遮罩从模糊到清晰，"镜片聚焦"）
+t=2100ms 入场完成
+```
 
-**点击转场：**
-- delay 400ms（等待点击视觉反馈）后，Banner opacity `1→0`（300ms）
-- 同时 `maskSoft` `0→7`（1500ms），遮罩从中心向外扩张吞噬整个画面，产生"进入 VR 世界"的隧道感
+#### 点击转场
 
----
+点击 Start 按钮后，遮罩从中心向外扩张覆盖全屏，期间切换场景，再从新页面退出遮罩：
 
-## 五、正式落地工作量
+```
+click
+  │
+  ├─ delay 400ms → banner opacity: 1 → 0，300ms（等待点击视觉反馈后淡出）
+  │
+  ├─ maskSoft: 0 → 7，1500ms          （遮罩向外扩张，逐渐吞没整个画面）
+  │                    ↓
+  │              画面被完全覆盖        （此时切换路由 / 跳转页面）
+  │                    ↓
+  └─ 新页面：maskSoft: 7 → 0          （遮罩从中心向外收缩，新场景逐渐显现）
+```
 
-| 工作项 | 说明 | 估算 |
-|--------|------|------|
-| 按运营确认参数固化配置 | 将 dat.GUI 调试参数替换为硬编码默认值，移除调试面板 | 0.5 天 |
-| 替换正式 UI 素材 | Banner、按钮、装饰图等切图替换 | 0.5 天 |
-| 点击后的页面跳转逻辑 | onClick 回调接入路由/跳转 | 0.5 天 |
-| 响应式适配 | 窗口 resize 已处理，需确认移动端布局比例 | 1 天 |
-| 性能测试与优化 | 见风险章节 | 1～2 天 |
-| **合计** | | **3.5～4.5 天** |
-
-> 以上不含运营调参时间，调参结果确认后方可开始落地。
-
----
-
-## 六、风险与降级方案
-
-### 风险 1：移动端性能
-
-**原因：** 地面网格每帧在 CPU 侧更新 10201 个顶点（101×101），移动端低端机可能帧率不足。
-
-**应对（按优先级）：**
-1. 降低网格分段数：`SEG_X/SEG_Y` 从 100 降至 50，顶点数减少至 1/4
-2. 将波浪计算迁移到顶点着色器（GPU），彻底消除 CPU 瓶颈
-3. 最终降级：移动端禁用波浪动画，地面静止展示
-
-### 风险 2：WebGL 不支持
-
-**应对：** 检测 WebGL 可用性，不可用时降级为静态图或视频背景。
-
-### 风险 3：运营调参超出视觉边界
-
-**应对：** dat.GUI 中对高风险参数（畸变强度、遮罩形状）设置数值范围上限，防止调出异常视觉效果。
-
----
-
-## 七、参数确认清单（交运营）
-
-运营通过 Playground Demo 的 dat.GUI 面板调整以下参数并截图/录屏确认：
-
-**Sky 面板**
-- 顶部/底部颜色、渐变区间（edge0/edge1）、渐变曲线指数
-- 是否显示云朵、云量、云密度、云速度
-
-**Wave 面板**
-- 波形类型（traveling / interfere / radial / random / noise）
-- 波浪速度、幅度倍数、渐入起点/终点
-
-**Buffer 面板**
-- 地面弯曲程度、地面 Z/Y 位置
-
-**VR 面板**
-- 遮罩横纵轴、圆角程度、边缘羽化、畸变强度
-
-**Camera 面板**
-- 俯仰角、视差偏移范围
-
-**UI 素材（需设计提供）**
-- Banner、按钮、装饰星等切图（PNG 透明底）
-- 各元素在 1920px 设计稿中的坐标和尺寸
+`maskSoft` 驱动的是 VR 遮罩的羽化宽度，值越大遮罩边界越向内扩，`7` 时覆盖全屏，产生"进入 VR 世界"的隧道感。
