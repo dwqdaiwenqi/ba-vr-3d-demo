@@ -102,6 +102,8 @@ export function removeFloorGrid(
   ;(gridFill.material as THREE.Material).dispose()
 }
 
+// 对于线段没有建立索引缓冲，应为没有用三角网络。顶点被共享程度低于三角网络，不用
+// 增加复杂度。对于fill的话应为建立了索引缓冲，所以就更新一个顶点就行了。
 export function updateGridLineBuffer(
   segPairs: [number, number][],
   verts: Vert[],

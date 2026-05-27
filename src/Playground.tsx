@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
+import WebGL from 'three/addons/capabilities/WebGL.js'
 import * as TWEEN from '@tweenjs/tween.js'
 import { createNoise3D } from 'simplex-noise'
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
@@ -38,6 +39,11 @@ const Playground = () => {
   useEffect(() => {
     const mount = mountRef.current!
 
+    if (!WebGL.isWebGLAvailable()) {
+      mount.innerHTML = `<img src="${bannerUrl}" style="width:100%;height:100%;object-fit:cover" />`
+      return
+    }
+
     const renderer = new THREE.WebGLRenderer({ antialias: true })
     renderer.setPixelRatio(devicePixelRatio)
     renderer.setSize(innerWidth, innerHeight)
@@ -46,10 +52,8 @@ const Playground = () => {
 
     const scene = new THREE.Scene()
     scene.fog = new THREE.FogExp2(0xffffff, 0.004)
-
     const uiTw = new TWEEN.Group()
 
-    // 自定义天空盒：蓝粉渐变色 + fbm 噪声云朵
     const skyDome = new THREE.Mesh(
       new THREE.SphereGeometry(100, 32, 16),
       new THREE.ShaderMaterial({
@@ -258,11 +262,12 @@ const Playground = () => {
     const skyDomeUni = (skyDome.material as THREE.ShaderMaterial).uniforms
 
     function playIntroAnimation() {
-      new TWEEN.Tween({ rx: params.axisAngle }, uiTw)
-        .to({ rx: 0 }, 1300)
+      new TWEEN.Tween({ rx: params.axisAngle, ry: -params.axisAngle * 0 }, uiTw)
+        .to({ rx: 0, ry: 0 }, 1300)
         .easing(TWEEN.Easing.Quadratic.Out)
-        .onUpdate((obj: { rx: number }) => {
+        .onUpdate((obj: { rx: number; ry: number }) => {
           camera.rotation.x = obj.rx
+          camera.rotation.y = obj.ry
         })
         .start()
 

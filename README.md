@@ -1,23 +1,33 @@
 # 官网落地页 VR 场景技术方案
 
+![alt text](image.png)
+
 ## 一、背景与目标
 
 官网落地页需要一个具有沉浸感的 3D 场景作为视觉入口，吸引用户进入游戏。
 
-目标效果：模拟 VR 头显视野的动态 3D 场景，包含程序化天空、动态地面波浪、UI 元素与入场动画，整体营造"进入VR世界"的沉浸感。
+目标效果：模拟 VR 头显视野的动态 3D 场景，包含程序化 SkyDome、动态地面波浪、UI 元素与入场动画，整体营造"进入VR世界"的沉浸感。
 
 ## 二、技术选型
-- `three.js r160 `
+- `three.js r160`
 
-## 三、模块设计
+## 三、兼容性与性能目标
 
-### 3.1 场景分层结构
+### 3.1 设备分级
+| 设备 | 策略 |
+|------|------|
+| PC（桌面端） | 完整 WebGL 场景，目标 60fps 稳定 |
+| 移动端 | 直接展示静态封面图
 
-![alt text](./01-scene-layers.png)
+## 四、模块设计
+
+### 4.1 场景分层结构
+
+![alt text](vr-scene-diagram.png)
 
 场景由四层叠加构成，从远到近依次渲染：天空球 → 地面网格 → UI Sprite → 后处理
 
-### 3.2 SkyDome
+### 4.2 SkyDome
 
 ![alt text](./06-sky-dome.png)
 
@@ -39,7 +49,7 @@ depthWrite: false   不写入深度缓冲，避免遮挡场景物体
 t    = clamp(dir.y × 0.5 + 0.5, 0, 1)   // 将 [-1,1] 映射到 [0,1]
 t    = pow(t, uGradientPow)               // 控制渐变曲线形状
 mask = smoothstep(uEdge0, uEdge1, t)      // 渐变区间
-色   = mix(uBottomColor, uTopColor, mask)
+skyColor   = mix(uBottomColor, uTopColor, mask)
 ```
 
 #### 云朵（FBM 噪声）
@@ -70,7 +80,7 @@ cloudMask = smoothstep(1-coverage, 1-coverage+0.3, n) × horizon
 | `uCloudSpeed` | 云朵飘动速度 | `0.2` |
 | `uShowCloud` | 是否显示云朵 | `1.0` |
 
-### 3.3 Grid Wave
+### 4.3 Grid Wave
 
 ![alt text](03-wave.png)
 
@@ -172,9 +182,8 @@ waveFade = 0 的顶点直接跳过波形计算，节省 CPU 开销。
 | interfere | 两列不同方向的波叠加，产生棋盘状驻波图样 | 两个 sin 函数加权叠加 |
 | radial | 从中心向外扩散，像水面投入石子 | `sin(t×1.5 - √(x²+y²)×0.1)` |
 | random | 每个顶点独立抖动，整体像颗粒感震动 | `\|sin(t + seed)\|` |
-| **noise** | **最自然的有机起伏，推荐正式版本使用** | Simplex Noise 3D |
 
-### 3.5 后处理：VR 遮罩 + 桶形畸变
+### 4.5 后处理：VR 遮罩 + 畸变
 
 ![alt text](02-vr-postprocess.png)
 
@@ -230,27 +239,20 @@ color   = texture2D(tDiffuse, distUV)        // 用畸变后的 UV 采样
 
 ---
 
-### 3.6 UI Sprite 系统
+### 4.6 UI Sprite 系统
 
 ![alt text](05-ui-sprite-coords.png)
 
 #### 设计稿坐标 → 3D 世界坐标
 
-设计师给的是 1920px 设计稿中的像素坐标，需要转换为 Three.js 世界坐标：
-
 ```
-设计稿像素坐标 (dsX, dsY)
-  │
-  ├─ 响应式缩放：scale = innerWidth / 1920
-  │
-  ├─ 转 NDC：ndcX = (dsX × scale / innerWidth) × 2 - 1
-  │           ndcY = -((dsY × scale / innerHeight) × 2 - 1)
-  │
-  ├─ 相机反投影：ndcPoint.unproject(camera)  →  射线方向 rayDir
-  │
-  └─ 与 z 平面求交：t = (z - camera.z) / rayDir.z
-                    worldX = camera.x + t × rayDir.x
-                    worldY = camera.y + t × rayDir.y
+响应式缩放：scale = innerWidth / 1920
+
+NDC坐标：ndcX = (dsX × scale / innerWidth) × 2 - 1
+
+反投影：ndcPoint.unproject(camera)  
+
+世界坐标：worldX = camera.x + (z - camera.z) / rayDir.z × rayDir.x
 ```
 
 无论屏幕尺寸如何变化，元素视觉位置始终与设计稿对应。不同元素设置不同 `z` 值，透视投影自动产生近大远小的层次感。
@@ -266,27 +268,17 @@ position = (x0 + w/2, y0 - h/2, z)       // 左上角对齐设计稿坐标
 renderOrder = 999                         // 始终渲染在场景最上层
 ```
 
-#### 交互：Raycaster
+### 4.7 动画系统
 
-每次 `mousemove` 向场景发射一条射线，检测命中的 Sprite：
-
-```
-mousemove → toNDC(e.pageX, e.pageY) → raycaster.intersectObjects
-  │
-  ├─ 命中变化  →  onHoverOut(旧) → onHover(新)
-  └─ click     →  onClick(命中mesh)
-```
-
-回调内用 TWEEN 驱动缩放、透明度等动画。
-
-### 3.7 动画系统
+![alt text](04-entry-animation.png)
 
 #### 入场动画
 
 页面加载后自动播放，两段串联：
 
 ```
-t=0ms    相机 rotation.x: 1.2 → 0，时长 1300ms，Quadratic.Out
+t=0ms    相机 rotation.x（俯仰角）: axisAngle → 0，时长 1300ms，Quadratic.Out
+         相机 rotation.y（偏航角）: 0 → 0（当前保持正前方，预留偏航支持）
                                     （俯视视角平滑转正）
 t=1300ms maskSoft: 0.6 → 0，时长 800ms，Quadratic.InOut
                                     （遮罩从模糊到清晰，"镜片聚焦"）
@@ -308,5 +300,3 @@ click
   │                    ↓
   └─ 新页面：maskSoft: 7 → 0          （遮罩从中心向外收缩，新场景逐渐显现）
 ```
-
-`maskSoft` 驱动的是 VR 遮罩的羽化宽度，值越大遮罩边界越向内扩，`7` 时覆盖全屏，产生"进入 VR 世界"的隧道感。

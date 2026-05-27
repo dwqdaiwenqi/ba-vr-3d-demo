@@ -8,14 +8,14 @@ export type WaveVert = {
 export type WaveFn = (t: number, v: WaveVert) => number
 
 export const waveFns: Record<string, WaveFn> = {
-  // 行波：沿 x 轴方向传播的正弦波
+  // 行波：沿 x 轴方向传播的正弦波，规则的正弦波
   traveling: (t, v) => Math.sin(t * 2 + v.x * 0.15),
 
-  // 干涉波：两列不同频率/方向的行波叠加
+  // 干涉波：两列不同频率/方向的行波叠加， 叠加后产生拍频，波峰形状不规则
   interfere: (t, v) =>
     Math.sin(t * 2 + v.x * 0.1) * 0.6 + Math.sin(t * 1.3 + v.x * 0.05 + v.y * 0.08) * 0.4,
 
-  // 径向波：从原点向外扩散的水波纹
+  // 径向波：从原点向外扩散的水波纹， 波峰是同心圆
   radial: (t, v) => Math.sin(t * 1.5 - Math.sqrt(v.x * v.x + v.y * v.y) * 0.1),
 
   // 随机波：每个顶点用独立 seed 偏移相位，形成无规律抖动感

@@ -19,18 +19,39 @@ export type AddUISpriteOptions = {
   onClick?: (mesh: THREE.Mesh) => void
 }
 
+// 将设计稿像素坐标转换为 3D 世界坐标
+// 原理：从相机向该像素方向发射射线，与指定 z 平面求交点
 export function designPxToWorld(dsX: number, dsY: number, z: number, designW: number) {
+  // 构造与场景相同参数的相机，用于坐标反投影
+  // 相机放在 z=50 朝 -z 方向看（与场景相机保持一致）
   const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 1000)
   camera.position.set(0, 0, 50)
   camera.lookAt(camera.position.clone().add(new THREE.Vector3(0, 0, -1)))
 
+  // 设计稿像素 → NDC（归一化设备坐标，范围 [-1, 1]）
+  // 先按屏幕/设计稿比例缩放，再映射到 [-1,1]
+  // Y 轴取反：设计稿 y 向下，NDC y 向上
   const designScale = innerWidth / designW
   const ndcX = ((dsX * designScale) / innerWidth) * 2 - 1
   const ndcY = -((dsY * designScale) / innerHeight) * 2 + 1
+
+  // NDC → 世界空间：unproject 把 NDC 点反投影到相机近平面附近的世界坐标
   const ndcPoint = new THREE.Vector3(ndcX, ndcY, 0.5)
   ndcPoint.unproject(camera)
+
+  // 射线方向 = 反投影点 - 相机位置，归一化
   const rayDir = ndcPoint.sub(camera.position).normalize()
+
+  // 射线与 z=指定值的平面求交
+  // 射线参数方程：point = camera.position + t × rayDir
+  // 令 point.z = z，解出 t：
+  //   camera.position.z + t × rayDir.z = z
+  //   t = (z - camera.position.z) / rayDir.z
+  // t 是射线走了多远，代入 x/y 得到交点的世界坐标
+
+  // 这里其实是求出设置的z深度的 t 应该是什么
   const t = (z - camera.position.z) / rayDir.z
+  // 通过这个t推导出x和z
   return { worldX: camera.position.x + t * rayDir.x, worldY: camera.position.y + t * rayDir.y }
 }
 

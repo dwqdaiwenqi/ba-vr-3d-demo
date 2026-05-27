@@ -47,6 +47,7 @@ void main() {
   float t = clamp(dir.y * 0.5 + 0.5, 0.0, 1.0);
   t = pow(t, uGradientPow);
   float mask = smoothstep(uEdge0, uEdge1, t);
+  // 先进行sky背景的渲染
   vec3 skyColor = mix(uBottomColor, uTopColor, mask);
 
   float cloudMask = 0.0;
@@ -58,6 +59,7 @@ void main() {
     cloudMask = smoothstep(1.0 - uCloudCoverage, 1.0 - uCloudCoverage + 0.3, n) * horizon;
   }
 
+  // 最后混合sky和fbm云朵噪声
   vec3 color = mix(skyColor, uCloudColor, cloudMask * uCloudDensity * uShowCloud);
   gl_FragColor = vec4(color, 1.0);
 }
