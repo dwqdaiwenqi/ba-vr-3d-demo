@@ -48,7 +48,7 @@ export type SkyDomeParams = {
 export const defaultParams: Params = {
   planeZ: 0,
   planeY: 10,
-  planeCurve: -40,
+  planeCurve: -25,
   waveType: 'radial',
   waveSpeed: 1,
   waveAmp: 1,
@@ -73,18 +73,17 @@ export const defaultSkyDomeParams: SkyDomeParams = {
   topColor: '#EBF7FF',
   bottomColor: '#F2F1FF',
   cloudColor: '#ffffff',
-  gradientPow: 1.8,
-  edge0: 0.25,
+  gradientPow: 2,
+  edge0: 0.4,
   edge1: 0.6,
   showCloud: true,
   cloudCoverage: 0.45,
   cloudDensity: 0.7,
   cloudScale: 2.5,
-  cloudSpeed: 0.2
+  cloudSpeed: 0.015
 }
 
 // ── 依赖注入类型 ──────────────────────────────────────────
-
 
 export type SetupGUIDeps = {
   gui: InstanceType<typeof window.dat.GUI>
@@ -123,18 +122,7 @@ export function setupGUI(deps: SetupGUIDeps): {
   const params: Params = { ...defaultParams }
   const skyDomeParams: SkyDomeParams = { ...defaultSkyDomeParams }
 
-  // 初始化应用默认值
-  floorRef.gridLines.position.y = params.planeY
-  floorRef.gridLines.position.z = params.planeZ
-  floorRef.gridFill.position.y = params.planeY
-  floorRef.gridFill.position.z = params.planeZ
-  barrelPass.uniforms.maskSoft.value = params.maskSoft
-  ;(camera as THREE.PerspectiveCamera).rotation.x = params.axisAngle
-
   const skyDomeUni = (skyDome.material as THREE.ShaderMaterial).uniforms
-  skyDomeUni.uGradientPow.value = skyDomeParams.gradientPow
-  skyDomeUni.uCloudSpeed.value = skyDomeParams.cloudSpeed
-  skyDomeUni.uEdge0.value = skyDomeParams.edge0
 
   // ── VR Mask ──────────────────────────────────────────────
   const maskFolder = gui.addFolder('VR')

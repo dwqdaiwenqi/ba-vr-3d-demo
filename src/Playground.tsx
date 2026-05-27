@@ -11,7 +11,7 @@ import {
   createPointerHandler,
   preloadMaterials
 } from './uiSprite'
-import { setupGUI } from './setupGUI'
+import { setupGUI, defaultParams, defaultSkyDomeParams } from './setupGUI'
 import {
   type FloorGridRef,
   createFloorGrid,
@@ -38,7 +38,6 @@ const Playground = () => {
   useEffect(() => {
     const mount = mountRef.current!
 
-    // ── 场景 ──────────────────────────────────────────────
     const renderer = new THREE.WebGLRenderer({ antialias: true })
     renderer.setPixelRatio(devicePixelRatio)
     renderer.setSize(innerWidth, innerHeight)
@@ -59,17 +58,17 @@ const Playground = () => {
         depthWrite: false,
         uniforms: {
           uTime: { value: 0 },
-          uTopColor: { value: new THREE.Color('#EBF7FF') },
-          uBottomColor: { value: new THREE.Color('#F2F1FF') },
-          uCloudColor: { value: new THREE.Color('#ffffff') },
-          uCloudCoverage: { value: 0.45 },
-          uCloudDensity: { value: 0.7 },
-          uCloudScale: { value: 2.5 },
-          uCloudSpeed: { value: 0.015 },
-          uGradientPow: { value: 2 },
-          uShowCloud: { value: 1.0 },
-          uEdge0: { value: 0.4 },
-          uEdge1: { value: 0.6 }
+          uTopColor: { value: new THREE.Color(defaultSkyDomeParams.topColor) },
+          uBottomColor: { value: new THREE.Color(defaultSkyDomeParams.bottomColor) },
+          uCloudColor: { value: new THREE.Color(defaultSkyDomeParams.cloudColor) },
+          uCloudCoverage: { value: defaultSkyDomeParams.cloudCoverage },
+          uCloudDensity: { value: defaultSkyDomeParams.cloudDensity },
+          uCloudScale: { value: defaultSkyDomeParams.cloudScale },
+          uCloudSpeed: { value: defaultSkyDomeParams.cloudSpeed },
+          uGradientPow: { value: defaultSkyDomeParams.gradientPow },
+          uShowCloud: { value: defaultSkyDomeParams.showCloud ? 1.0 : 0.0 },
+          uEdge0: { value: defaultSkyDomeParams.edge0 },
+          uEdge1: { value: defaultSkyDomeParams.edge1 }
         },
         vertexShader: skyDomeVert,
         fragmentShader: skyDomeFrag
@@ -185,7 +184,7 @@ const Playground = () => {
       star4.rotation.z = 180
     })
 
-    let planeCurve = -25
+    let planeCurve = defaultParams.planeCurve
 
     let { gridLines, gridFill, verts, segPairs, linesPosArr, linesGeo, fillPosArr, fillGeo } =
       createFloorGrid(scene, planeCurve)
@@ -193,13 +192,13 @@ const Playground = () => {
     const BarrelShader = {
       uniforms: {
         tDiffuse: { value: null },
-        maskRX: { value: 0.5 },
-        maskRY: { value: 0.5 },
-        maskN: { value: 5.5 },
-        maskSoft: { value: 0 },
-        maskColor: { value: new THREE.Color(1, 1, 1) },
-        barrel: { value: 0.3 },
-        barrelCenter: { value: new THREE.Vector2(0.5, 0.5) }
+        maskRX: { value: defaultParams.maskRX },
+        maskRY: { value: defaultParams.maskRY },
+        maskN: { value: defaultParams.maskN },
+        maskSoft: { value: defaultParams.maskSoft },
+        maskColor: { value: new THREE.Color(defaultParams.maskColor) },
+        barrel: { value: defaultParams.barrel },
+        barrelCenter: { value: new THREE.Vector2(defaultParams.barrelCX, defaultParams.barrelCY) }
       },
       vertexShader: barrelVert,
       fragmentShader: barrelFrag
@@ -218,7 +217,6 @@ const Playground = () => {
       noise: createNoiseFn(noise3D)
     }
 
-    // ── dat.GUI ───────────────────────────────────────────
     const gui = new GUI()
     const planeCurveRef = { value: planeCurve }
     const floorRef: FloorGridRef = {
@@ -231,6 +229,12 @@ const Playground = () => {
       fillPosArr,
       fillGeo
     }
+
+    gridLines.position.y = defaultParams.planeY
+    gridLines.position.z = defaultParams.planeZ
+    gridFill.position.y = defaultParams.planeY
+    gridFill.position.z = defaultParams.planeZ
+    ;(camera as THREE.PerspectiveCamera).rotation.x = defaultParams.axisAngle
 
     const { params } = setupGUI({
       gui,
