@@ -1,6 +1,9 @@
 import * as THREE from 'three'
 import * as TWEEN from '@tweenjs/tween.js'
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js'
+import type { FloorGridRef } from './floorGrid'
+
+export type { FloorGridRef }
 
 // ── 参数默认值 & 类型 ─────────────────────────────────────
 
@@ -82,16 +85,6 @@ export const defaultSkyDomeParams: SkyDomeParams = {
 
 // ── 依赖注入类型 ──────────────────────────────────────────
 
-export type FloorGridRef = {
-  gridLines: THREE.LineSegments
-  gridFill: THREE.Mesh
-  verts: { x: number; y: number; z: number; initZ: number; seed: number; amp: number }[]
-  segPairs: [number, number][]
-  linesPosArr: Float32Array
-  linesGeo: THREE.BufferGeometry
-  fillPosArr: Float32Array
-  fillGeo: THREE.BufferGeometry
-}
 
 export type SetupGUIDeps = {
   gui: InstanceType<typeof window.dat.GUI>

@@ -11,7 +11,14 @@ import {
   createPointerHandler,
   preloadMaterials
 } from './uiSprite'
-import { setupGUI, type FloorGridRef } from './setupGUI'
+import { setupGUI } from './setupGUI'
+import {
+  type FloorGridRef,
+  createFloorGrid,
+  removeFloorGrid,
+  updateGridLineBuffer,
+  updateGridFillBuffer
+} from './floorGrid'
 import { waveFns, createNoiseFn } from './waveTypes'
 import { smoothstep } from './helper/smoothstep'
 import skyDomeVert from './shaders/skyDome.vert.glsl?raw'
@@ -76,7 +83,6 @@ const Playground = () => {
     camera.position.set(0, 0, camTarget.z)
     camera.lookAt(camera.position.clone().add(new THREE.Vector3(0, 0, -1)))
 
-    // ── 设计稿 UI 辅助函数 ────────────────────────────────
     const loader = new THREE.TextureLoader()
 
     const clickableSprites: ClickableSprite[] = []
@@ -179,126 +185,11 @@ const Playground = () => {
       star4.rotation.z = 180
     })
 
-    const SEG_X = 100
-    const SEG_Y = 100
-    const SIZE = 400
-    const COLS = SEG_X + 1
-    const ROWS = SEG_Y + 1
-    const HALF = SIZE / 2
-
     let planeCurve = -25
 
-    // ── 地面网格（线框 + 填充面）────────────────────────────
-    function createFloorGrid(curve: number) {
-      type Vert = { x: number; y: number; z: number; initZ: number; seed: number; amp: number }
-      const verts: Vert[] = []
-      const segPairs: [number, number][] = []
-
-      // 生成顶点数据
-      for (let row = 0; row <= SEG_Y; row++) {
-        for (let col = 0; col <= SEG_X; col++) {
-          const x = col * (SIZE / SEG_X) - HALF
-          const y = row * (SIZE / SEG_Y) - HALF
-          const t = (row * COLS + col) / (COLS * ROWS)
-          const initZ = Math.sin(t * Math.PI) * curve
-          verts.push({
-            x,
-            y,
-            z: initZ,
-            initZ,
-            seed: Math.random() * Math.PI * 2,
-            amp: Math.random() * 10 + 5
-          })
-          const i = row * COLS + col
-          if (col < SEG_X) segPairs.push([i, i + 1])
-          if (row < SEG_Y) segPairs.push([i, (row + 1) * COLS + col])
-        }
-      }
-
-      // 线框层：网格线，填充面用 polygonOffset 后移深度，避免 z-fighting
-      const linesPosArr = new Float32Array(segPairs.length * 6)
-      const linesGeo = new THREE.BufferGeometry()
-      linesGeo.setAttribute('position', new THREE.BufferAttribute(linesPosArr, 3))
-      const gridLines = new THREE.LineSegments(
-        linesGeo,
-        new THREE.LineBasicMaterial({ color: '#88b0d8', transparent: true, opacity: 0.7 })
-      )
-      gridLines.rotation.x = -Math.PI / 2
-      gridLines.rotation.z = Math.PI / 2
-      scene.add(gridLines)
-
-      // 填充面层：纯色面片，提供地面颜色底色
-      const fillPosArr = new Float32Array(verts.length * 3)
-      const meshIndices: number[] = []
-      for (let row = 0; row < SEG_Y; row++) {
-        for (let col = 0; col < SEG_X; col++) {
-          const a = row * COLS + col
-          const b = row * COLS + col + 1
-          const c = (row + 1) * COLS + col
-          const d = (row + 1) * COLS + col + 1
-          meshIndices.push(a, b, d, a, d, c)
-        }
-      }
-      const fillGeo = new THREE.BufferGeometry()
-      fillGeo.setAttribute('position', new THREE.BufferAttribute(fillPosArr, 3))
-      fillGeo.setIndex(meshIndices)
-      const gridFill = new THREE.Mesh(
-        fillGeo,
-        new THREE.MeshBasicMaterial({
-          color: '#dde8f8',
-          transparent: true,
-          opacity: 1,
-          side: THREE.DoubleSide,
-          fog: true,
-          polygonOffset: true,
-          polygonOffsetFactor: 1,
-          polygonOffsetUnits: 1
-        })
-      )
-      gridFill.rotation.x = -Math.PI / 2
-      gridFill.rotation.z = Math.PI / 2
-      scene.add(gridFill)
-
-      return { gridLines, gridFill, verts, segPairs, linesPosArr, linesGeo, fillPosArr, fillGeo }
-    }
-
-    function removeFloorGrid(gridLines: THREE.LineSegments, gridFill: THREE.Mesh) {
-      scene.remove(gridLines)
-      scene.remove(gridFill)
-      gridLines.geometry.dispose()
-      ;(gridLines.material as THREE.Material).dispose()
-      gridFill.geometry.dispose()
-      ;(gridFill.material as THREE.Material).dispose()
-    }
-
-    const updateGridLineBuffer = () => {
-      for (let s = 0; s < segPairs.length; s++) {
-        const [indexA, indexB] = segPairs[s]
-        const a = verts[indexA]
-        const b = verts[indexB]
-        const offset = s * 6
-        linesPosArr[offset + 0] = a.x
-        linesPosArr[offset + 1] = a.y
-        linesPosArr[offset + 2] = a.z
-        linesPosArr[offset + 3] = b.x
-        linesPosArr[offset + 4] = b.y
-        linesPosArr[offset + 5] = b.z
-      }
-      linesGeo.attributes.position.needsUpdate = true
-    }
-    const updateGridFillBuffer = () => {
-      for (let i = 0; i < verts.length; i++) {
-        fillPosArr[i * 3 + 0] = verts[i].x
-        fillPosArr[i * 3 + 1] = verts[i].y
-        fillPosArr[i * 3 + 2] = verts[i].z
-      }
-      fillGeo.attributes.position.needsUpdate = true
-    }
-
     let { gridLines, gridFill, verts, segPairs, linesPosArr, linesGeo, fillPosArr, fillGeo } =
-      createFloorGrid(planeCurve)
+      createFloorGrid(scene, planeCurve)
 
-    // ── 后处理：VR 遮罩 ───────────────────────────────────
     const BarrelShader = {
       uniforms: {
         tDiffuse: { value: null },
@@ -350,8 +241,8 @@ const Playground = () => {
       uiTw,
       floorRef,
       planeCurveRef,
-      createFloorGrid,
-      removeFloorGrid,
+      createFloorGrid: (curve) => createFloorGrid(scene, curve),
+      removeFloorGrid: (lines, fill) => removeFloorGrid(scene, lines, fill),
       onFloorRebuild: (result) => {
         planeCurve = planeCurveRef.value
         ;({ gridLines, gridFill, verts, segPairs, linesPosArr, linesGeo, fillPosArr, fillGeo } =
@@ -362,24 +253,26 @@ const Playground = () => {
 
     const skyDomeUni = (skyDome.material as THREE.ShaderMaterial).uniforms
 
-    // ── 入场动画 ──────────────────────────────────────────
-    new TWEEN.Tween({ rx: params.axisAngle }, uiTw)
-      .to({ rx: 0 }, 1300)
-      .easing(TWEEN.Easing.Quadratic.Out)
-      .onUpdate((obj: { rx: number }) => {
-        camera.rotation.x = obj.rx
-      })
-      .start()
+    function playIntroAnimation() {
+      new TWEEN.Tween({ rx: params.axisAngle }, uiTw)
+        .to({ rx: 0 }, 1300)
+        .easing(TWEEN.Easing.Quadratic.Out)
+        .onUpdate((obj: { rx: number }) => {
+          camera.rotation.x = obj.rx
+        })
+        .start()
 
-    new TWEEN.Tween({ maskSoft: params.maskSoft }, uiTw)
-      .to({ maskSoft: 0 }, 800)
-      .delay(1300)
-      .easing(TWEEN.Easing.Quadratic.InOut)
-      .onUpdate((obj: { maskSoft: number }) => {
-        barrelPass.uniforms.maskSoft.value = obj.maskSoft
-      })
-      .onComplete(() => {})
-      .start()
+      new TWEEN.Tween({ maskSoft: params.maskSoft }, uiTw)
+        .to({ maskSoft: 0 }, 800)
+        .delay(1300)
+        .easing(TWEEN.Easing.Quadratic.InOut)
+        .onUpdate((obj: { maskSoft: number }) => {
+          barrelPass.uniforms.maskSoft.value = obj.maskSoft
+        })
+        .start()
+    }
+
+    playIntroAnimation()
 
     const { destroy: destroyPointer } = createPointerHandler({
       camera,
@@ -393,7 +286,6 @@ const Playground = () => {
       }
     })
 
-    // ── 动画循环 ──────────────────────────────────────────
     let rafId: number
 
     function animate() {
@@ -413,8 +305,8 @@ const Playground = () => {
         v.z = v.initZ + n * v.amp * params.waveAmp * waveFade
       }
 
-      updateGridFillBuffer()
-      updateGridLineBuffer()
+      updateGridFillBuffer(verts, fillPosArr, fillGeo)
+      updateGridLineBuffer(segPairs, verts, linesPosArr, linesGeo)
 
       composer.render()
     }
