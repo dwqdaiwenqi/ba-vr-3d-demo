@@ -250,7 +250,7 @@ color   = texture2D(tDiffuse, distUV)        // 用畸变后的 UV 采样
 
 NDC坐标：ndcX = (dsX × scale / innerWidth) × 2 - 1
 
-反投影：ndcPoint.unproject(camera)  
+反投影：rayDir = ndcPoint.unproject(camera)  
 
 世界坐标：worldX = camera.x + (z - camera.z) / rayDir.z × rayDir.x
 ```
@@ -265,7 +265,6 @@ NDC坐标：ndcX = (dsX × scale / innerWidth) × 2 - 1
 w = worldX(left + itemW) - worldX(left)   // 由设计稿宽度反算世界宽度
 h = w / (img.width / img.height)          // 保持贴图宽高比
 position = (x0 + w/2, y0 - h/2, z)       // 左上角对齐设计稿坐标
-renderOrder = 999                         // 始终渲染在场景最上层
 ```
 
 ### 4.7 动画系统

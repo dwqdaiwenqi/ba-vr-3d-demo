@@ -32,13 +32,16 @@ export function designPxToWorld(dsX: number, dsY: number, z: number, designW: nu
   // 先按屏幕/设计稿比例缩放，再映射到 [-1,1]
   // Y 轴取反：设计稿 y 向下，NDC y 向上
   const designScale = innerWidth / designW
+
+  // 1920位置*缩放系数/真实宽度*2-1
   const ndcX = ((dsX * designScale) / innerWidth) * 2 - 1
   const ndcY = -((dsY * designScale) / innerHeight) * 2 + 1
 
+  // 这个ndc位置进行逆变换到世界空间中
   // NDC → 世界空间：unproject 把 NDC 点反投影到相机近平面附近的世界坐标
   const ndcPoint = new THREE.Vector3(ndcX, ndcY, 0.5)
   ndcPoint.unproject(camera)
-
+  // 世界空间中的点 - 相机世界位置
   // 射线方向 = 反投影点 - 相机位置，归一化
   const rayDir = ndcPoint.sub(camera.position).normalize()
 
@@ -49,6 +52,9 @@ export function designPxToWorld(dsX: number, dsY: number, z: number, designW: nu
   //   t = (z - camera.position.z) / rayDir.z
   // t 是射线走了多远，代入 x/y 得到交点的世界坐标
 
+  // 所以，某个点的坐标在世界空间中表示为:
+  // z = camera.position.z + t * rayDir.z
+  // y = camera.position.y + t * rayDir.y
   // 这里其实是求出设置的z深度的 t 应该是什么
   const t = (z - camera.position.z) / rayDir.z
   // 通过这个t推导出x和z
